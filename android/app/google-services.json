@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "345339685076",
+    "project_id": "globalcalls-b0a61",
+    "storage_bucket": "globalcalls-b0a61.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345339685076:android:7dc8c63cba76e0d0a3b341",
+        "android_client_info": {
+          "package_name": "com.ultimaterocker.globalCalls"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "345339685076-qhjdusi1ansrsi0pjadgem26r468thi9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ultimaterocker.globalCalls",
+            "certificate_hash": "51c022a37b62a19fd52597022a9157d1a637e4eb"
+          }
+        },
+        {
+          "client_id": "345339685076-itmb7lq4oh96imlgaab87kdfrvstondt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtAYo-rcvkO_kRei_Kv_fdvkNL4Cq2bYw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "345339685076-itmb7lq4oh96imlgaab87kdfrvstondt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
