@@ -1,7 +1,17 @@
+import 'package:agora_flutter_quickstart/src/pages/CoinsPurchase.dart';
 import 'package:agora_flutter_quickstart/src/pages/Second.dart';
+import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
+import 'package:agora_flutter_quickstart/src/utils/bannerAds.dart';
+import 'package:agora_flutter_quickstart/src/utils/customNavigation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'package:vibration/vibration.dart';
 
 class FirstPage extends StatefulWidget {
   // This widget is the root of your application.
@@ -11,11 +21,69 @@ class FirstPage extends StatefulWidget {
 
 class _FirstPageState extends State<FirstPage> {
   TextEditingController textEditingController = TextEditingController();
+  CommonMethods cm = new CommonMethods();
   String gender = "male";
+  bool showAds = true;
+  late BannerAd banner;
+  @override
+  void initState() {
+    super.initState();
+    cm.checkConnectivity(context);
+    willShowAds();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final adState = Provider.of<BannerAds>(context);
+    adState.initialization.then((value) {
+      setState(() {
+        banner = BannerAd(
+            size: AdSize.mediumRectangle,
+            adUnitId: adState.bannerAdUnit1,
+            listener: adState.adListener,
+            request: AdRequest())
+          ..load();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    cm.subscription.cancel();
+    super.dispose();
+  }
+
+  willShowAds() async {
+    if (FirebaseAuth.instance.currentUser != null) {
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(FirebaseAuth.instance.currentUser!.email)
+          .get()
+          .then((value) {
+        if (value.get("removeAds") == cm.getCurrentDate()) {
+          setState(() {
+            showAds = false;
+          });
+        }
+      });
+    }
+  }
+
+  navigateTosecondScreen() async {
+  await Navigator.of(context).push(CustomPageRouteAnimation(
+        child: SecondPage(textEditingController.text, gender)));
+    willShowAds();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final adState = Provider.of<BannerAds>(context);
+
     var screen = MediaQuery.of(context).size;
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -28,9 +96,21 @@ class _FirstPageState extends State<FirstPage> {
         Positioned(
           top: 90,
           child: Container(
-              height: screen.height * 0.4,
+              // height: screen.height * 0.4,
               width: screen.height * 0.4,
               decoration: BoxDecoration(
+                boxShadow: [
+                  //background color of box
+                  BoxShadow(
+                    color: Colors.black38,
+                    blurRadius: 10.0, // soften the shadow
+                    spreadRadius: 5.0, //extend the shadow
+                    offset: Offset(
+                      -3.0, // Move to right 10  horizontally
+                      3.0, // Move to bottom 10 Vertically
+                    ),
+                  )
+                ],
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -50,21 +130,24 @@ class _FirstPageState extends State<FirstPage> {
                     padding: const EdgeInsets.only(
                         top: 15, bottom: 30, left: 30, right: 30),
                     child: TextFormField(
-                  
+                      textAlign: TextAlign.center,
                       controller: textEditingController,
+                      autofocus: true,
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(15),
                       ],
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Please enter name';
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter display name';
                         }
                         return null;
                       },
                       decoration: InputDecoration(
+                        
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
                         fillColor: Colors.black12,
                         filled: true,
-                        hintText: "             Enter Display Name",
+                        labelText: "             Enter Display Name",
                         contentPadding: const EdgeInsets.only(
                             left: 8.0, bottom: 8.0, top: 8.0),
                         enabledBorder: OutlineInputBorder(
@@ -75,6 +158,8 @@ class _FirstPageState extends State<FirstPage> {
                           borderSide: BorderSide(color: Colors.white24),
                           borderRadius: BorderRadius.circular(30),
                         ),
+
+                        
                       ),
                       style: TextStyle(color: Colors.black),
                     ),
@@ -142,32 +227,67 @@ class _FirstPageState extends State<FirstPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                   
-                      if (textEditingController.text.length!=0) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SecondPage(
-                                    textEditingController.text, gender)));
+                      // if (await Vibration.hasCustomVibrationsSupport()!=null) {
+                      //   Vibration.vibrate(duration: 1000);
+                      // } else {
+                      //   Vibration.vibrate();
+                      //   await Future.delayed(Duration(milliseconds: 500));
+                      //   Vibration.vibrate();
+                      // }
+                      FocusScope.of(context).unfocus();
+                      if (textEditingController.text.length != 0) {
+                        navigateTosecondScreen();
                       }
+                      // showDialog(context: context, builder: (context)=>CoinPurchasePage());
                     },
-                    child: Container(
-                      alignment: Alignment.center,
-                      width: screen.width * 0.73,
-                      height: 50,
-                      decoration: BoxDecoration(
-                          color: Colors.orange,
-                          gradient: LinearGradient(
-                              colors: [Colors.amber, Colors.orange],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight),
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Text(
-                        "Save",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          bottom: 20, left: 25, right: 25),
+                      child: Container(
+                        alignment: Alignment.center,
+                        // width: screen.width * 0.73,
+                        height: 50,
+                        decoration: BoxDecoration(
+                            boxShadow: [
+                              //background color of box
+                              BoxShadow(
+                                color: Colors.black38,
+                                blurRadius: 5.0, // soften the shadow
+                                spreadRadius: 1.0, //extend the shadow
+                                offset: Offset(
+                                  -3.0, // Move to right 10  horizontally
+                                  3.0, // Move to bottom 10 Vertically
+                                ),
+                              )
+                            ],
+                            color: Colors.orange,
+                            gradient: LinearGradient(
+                                colors: [Colors.amber, Colors.orange],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight),
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Go Anonymous",
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20),
+                            ),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Image.asset(
+                              "anonymous.png",
+                              fit: BoxFit.cover,
+                              height: 30,
+                              width: 30,
+                            )
+                          ],
+                        ),
                       ),
                     ),
                   )
@@ -188,13 +308,30 @@ class _FirstPageState extends State<FirstPage> {
                     borderRadius: BorderRadius.circular(50),
                     color: Colors.black12),
                 child: Icon(
-                  Icons.video_call,
+                  Icons.video_camera_front_outlined,
                   color: Colors.black,
                   size: 35,
                 ),
               ),
             ),
           ),
+        ),
+        Positioned(
+          bottom: 30,
+          child: showAds
+              ? Container(
+                  height: 250,
+                  width: 320,
+                  child: AdWidget(
+                    ad: BannerAd(
+                        size: AdSize.mediumRectangle,
+                        adUnitId: adState.bannerAdUnit1,
+                        listener: adState.adListener,
+                        request: AdRequest())
+                      ..load(),
+                  ),
+                )
+              : SizedBox(),
         )
       ]),
     );

@@ -21,9 +21,21 @@ dependencies:
   cupertino_icons: ^1.0.3
   firebase_core: ^1.8.0
   agora_rtc_engine: ^4.0.2
-  permission_handler: ^8.1.1
+  permission_handler: ^8.2.5
   cloud_firestore: ^2.5.4
   avatar_glow: ^2.0.1
+  google_mobile_ads: ^0.13.5
+  provider: ^6.0.1
+  firebase_auth: ^3.2.0
+  google_sign_in: ^5.2.1
+  audioplayers: ^0.20.1
+  vibration: ^1.7.4-nullsafety.0
+  internet_connection_checker: ^0.0.1+3
+  connectivity_plus: ^2.1.0
+  flutter_rating_bar: ^4.0.0
+  store_redirect: ^2.0.0
+  url_launcher: ^6.0.17
+
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +54,19 @@ flutter:
   assets:
    - maleAvatar.png
    - femaleAvatar.png
+   - anonymous.png
+   - coin.png
+   - VcBot1.gif
+   - VcBot2.gif
+   - VcBot3.gif
+   - VcBot4.gif
+   - VcBot5.gif
+   - joinCall.mp3
+   - shineCoin.gif
+   - stackCoins.gif
+   - searching.gif
+
+   
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.
   # For details regarding adding assets from package dependencies, see

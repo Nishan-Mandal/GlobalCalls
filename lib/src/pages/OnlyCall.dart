@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
 import 'package:agora_flutter_quickstart/src/utils/settings.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,12 +30,16 @@ class OnlyCallPage extends StatefulWidget {
   @override
   _OnlyCallPageState createState() => _OnlyCallPageState();
 }
-
-class _OnlyCallPageState extends State<OnlyCallPage> {
+ AudioPlayer plr1 = AudioPlayer();
+ AudioCache player1 = AudioCache(fixedPlayer: plr1);
+ class _OnlyCallPageState extends State<OnlyCallPage> {
   final _users = <int>[];
   final _infoStrings = <String>[];
   bool muted = false;
   late RtcEngine _engine;
+  bool playNow=true;
+
+
 
   @override
   void dispose() {
@@ -50,6 +57,45 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
     super.initState();
 
     initialize();
+  }
+
+  playJoinCallSoundEffect() async {
+    if(isSound){
+    await player1.play("joinCall.mp3");
+    }
+  }
+
+    int getRandomElement() {
+    Random rnd;
+    int min = 0;
+    int max = 4;
+    rnd = new Random();
+    int r = min + rnd.nextInt(max - min);
+    return r;
+  }
+  var randomBot;
+  Duration duration2 = Duration(seconds: 60);
+  Timer? timer2;
+  var seconds2 = 60;
+  bool countDown2 = true;
+  void timerToEndSearching() {
+    timer2 = Timer.periodic(Duration(seconds: 1), (_) => addTime2());
+  }
+
+  void addTime2() {
+    final addSeconds = countDown2 ? -1 : 1;
+    setState(() {
+      seconds2 = duration2.inSeconds + addSeconds;
+      if (seconds2 == 5) {
+        randomBot = getRandomElement();
+      }
+      if (seconds2 <= -3) {
+        _onCallEnd(context, seconds ?? 0);
+        timer2?.cancel();
+      } else {
+        duration2 = Duration(seconds: seconds2);
+      }
+    });
   }
 
   Future<void> initialize() async {
@@ -165,7 +211,7 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
                 Container(
                   height: screen.height,
                   width: screen.width,
-                  color: Colors.white,
+                  color: Colors.amber,
                   child: AvatarGlow(
                     glowColor: Colors.blue,
                     endRadius: 130.0,
@@ -214,6 +260,11 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
               ],
             ));
       case 2:
+           if (playNow) {
+          playJoinCallSoundEffect();
+        
+          playNow = false;
+        }
         return Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -250,15 +301,16 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
     timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
   }
 
+var seconds;
   void addTime() {
     final views = _getRenderViews();
     final addSeconds = countDown ? 1 : -1;
     setState(() {
-      final seconds = duration.inSeconds + addSeconds;
+     seconds = duration.inSeconds + addSeconds;
      
       if (views.length == 1 || seconds==600) {
         timer?.cancel();
-        _onCallEnd(context);
+        _onCallEnd(context,seconds??0);
       }
       if (seconds < 0) {
         timer?.cancel();
@@ -268,8 +320,8 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
     });
   }
 
-  _onCallEnd(BuildContext context) async {
-    Navigator.pop(context);
+  _onCallEnd(BuildContext context, int seconds) async {
+    Navigator.pop(context,seconds);
     FirebaseFirestore.instance
         .collection("onlyCallsUsers-online")
         .doc(widget.channelName)
@@ -283,11 +335,38 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
     _engine.muteLocalAudioStream(muted);
   }
 
+  backAlert() {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text("Do you want to exit?"),
+        actions: [
+          TextButton(
+              child: Text("Yes"),
+              onPressed: () {
+                _onCallEnd(context,seconds??0);
+                Navigator.pop(context);
+                Navigator.pop(context);
+                
+              }),
+          TextButton(
+            child: Text("No"),
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+//main Widget here ------------------------------
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Colors.white,
         body: WillPopScope(
-            onWillPop: () => _onCallEnd(context),
+            onWillPop: () =>backAlert(),
             child: Center(child: _viewRows())),
       );
 
@@ -352,11 +431,24 @@ class _OnlyCallPageState extends State<OnlyCallPage> {
 
   Widget endCall() {
     return GestureDetector(
-      onTap: () => _onCallEnd(context),
+      onTap: () => _onCallEnd(context,seconds??0),
       child: Container(
         height: 60,
         width: 60,
-        decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+           boxShadow: [
+                                //background color of box
+                                BoxShadow(
+                                  color: Colors.black38,
+                                  blurRadius: 5.0, // soften the shadow
+                                  spreadRadius:0.0, //extend the shadow
+                                  offset: Offset(
+                                    -3.0, // Move to right 10  horizontally
+                                    3.0, // Move to bottom 10 Vertically
+                                  ),
+                                )
+                              ],
+          color: Colors.red, shape: BoxShape.circle),
         child: Icon(
           Icons.call_end,
           color: Colors.white,

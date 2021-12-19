@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
@@ -7,7 +9,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:vibration/vibration.dart';
 import '../utils/settings.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class VideoCallPage extends StatefulWidget {
   /// non-modifiable channel name of the page
@@ -28,12 +32,16 @@ class VideoCallPage extends StatefulWidget {
   _VideoCallPageState createState() => _VideoCallPageState();
 }
 
+AudioPlayer plr1 = AudioPlayer();
+AudioCache player1 = AudioCache(fixedPlayer: plr1);
+
 class _VideoCallPageState extends State<VideoCallPage> {
+  bool playNow = true;
   final _users = <int>[];
   final _infoStrings = <String>[];
   bool muted = false;
   late RtcEngine _engine;
-
+  int tempLengthOfChatListForVibtation = 0;
   @override
   void dispose() {
     // clear users
@@ -48,8 +56,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
   @override
   void initState() {
     super.initState();
-
+    timerToEndSearching();
     initialize();
+    player1.load("joinCall.mp3");
   }
 
   Future<void> initialize() async {
@@ -127,10 +136,61 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return list;
   }
 
+  playJoinCallSoundEffect() async {
+    if(isSound){
+    await player1.play("joinCall.mp3");
+    }
+  }
+
+  void vibrateCallConnected() async {
+    if(isVibration){
+    if (await Vibration.hasCustomVibrationsSupport() != null) {
+      Vibration.vibrate(duration: 600);
+    } else {
+      Vibration.vibrate();
+      await Future.delayed(Duration(milliseconds: 300));
+      Vibration.vibrate();
+    }
+    }
+  }
+
+  void vibrateForChat() async {
+    if(isVibration){
+    if (await Vibration.hasCustomVibrationsSupport() != null) {
+      Vibration.vibrate(duration: 300);
+    } else {
+      Vibration.vibrate();
+      await Future.delayed(Duration(milliseconds: 150));
+      Vibration.vibrate();
+    }
+    }
+  }
+
+  bool colorOfGreenDot = false;
+  bool isSearching = true;
   bool timerStated = false;
+
+  List callBots = [
+    "VcBot1.gif",
+    "VcBot2.gif",
+    "VcBot3.gif",
+    "VcBot4.gif",
+    "VcBot5.gif"
+  ];
+
+  int getRandomElement() {
+    Random rnd;
+    int min = 0;
+    int max = 4;
+    rnd = new Random();
+    int r = min + rnd.nextInt(max - min);
+    return r;
+  }
 
   /// Video layout wrapper
   Widget _viewRows() {
+    var isKeyboard = MediaQuery.of(context).viewInsets.bottom != 0;
+
     var screen = MediaQuery.of(context).size;
     final views = _getRenderViews();
     if (views.length == 2 && !timerStated) {
@@ -145,34 +205,63 @@ class _VideoCallPageState extends State<VideoCallPage> {
             child: Stack(
               alignment: Alignment.topRight,
               children: [
-                Container(
-                  height: screen.height,
-                  width: screen.width,
-                  color: Colors.white,
-                  child: AvatarGlow(
-                    glowColor: Colors.blue,
-                    endRadius: 130.0,
-                    duration: Duration(milliseconds: 2000),
-                    repeat: true,
-                    showTwoGlows: true,
-                    repeatPauseDuration: Duration(milliseconds: 100),
-                    child: Material(
-                        // Replace this child with your own
-                        elevation: 8.0,
-                        shape: CircleBorder(),
+                seconds2 >= 0
+                    ? Container(
+                        height: screen.height,
+                        width: screen.width,
+                        color: Colors.amber,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "searching.gif",
+                            ),
+                            seconds2 >= 0
+                                ? Text("Tip: Always be kind to all!",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black))
+                                : Text("")
+                          ],
+                        ),
+                        // child: AvatarGlow(
+                        //   glowColor: Colors.blue,
+                        //   endRadius: 130.0,
+                        //   duration: Duration(milliseconds: 2000),
+                        //   repeat: true,
+                        //   showTwoGlows: true,
+                        //   repeatPauseDuration: Duration(milliseconds: 100),
+                        //   child: Material(
+                        //       // Replace this child with your own
+                        //       elevation: 8.0,
+                        //       shape: CircleBorder(),
+                        //       child: Container(
+                        //         height: 130,
+                        //         width: 130,
+                        //         decoration: BoxDecoration(
+                        //             color: Colors.white,
+                        //             shape: BoxShape.circle),
+                        //         child: Center(
+                        //             child: Text(
+                        //           "$seconds2",
+                        //           style: TextStyle(
+                        //               fontWeight: FontWeight.bold,
+                        //               fontSize: 22,
+                        //               color: Colors.teal),
+                        //         )),
+                        //       )),
+                        // ),
+                      )
+                    : Center(
                         child: Container(
-                          height: 130,
-                          width: 130,
-                          decoration: BoxDecoration(
-                              color: Colors.white, shape: BoxShape.circle),
-                          child: Icon(
-                            Icons.search_rounded,
-                            color: Colors.black,
-                            size: 50,
-                          ),
-                        )),
-                  ),
-                ),
+                            height: screen.height,
+                            width: screen.width,
+                            child: Image.asset(
+                              callBots[randomBot],
+                              fit: BoxFit.cover,
+                            ))),
                 Padding(
                   padding: const EdgeInsets.only(top: 10, right: 10),
                   child: Container(
@@ -180,10 +269,123 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     width: 90,
                     child: views[0],
                   ),
-                )
+                ),
+                Positioned(
+                  top: 290,
+                  left: screen.width / 2 - 10,
+                  child: Text(
+                    "$seconds2",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                seconds2 >= 0
+                    ? Positioned(
+                        bottom: 20,
+                        // left: MediaQuery.of(context).size.width/2-35,
+                        left: 140,
+                        right: 140,
+                        child: GestureDetector(
+                          onTap: () => _onCallEnd(context, seconds ?? 0),
+                          child: Container(
+                            height: 60,
+                            width: 60,
+                            decoration: BoxDecoration(
+                                color: Colors.red, shape: BoxShape.circle),
+                            child: Icon(
+                              Icons.call_end,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                        // child: SizedBox(
+                        //   height: 60,
+                        //   width: 60,
+                        //   child: FlatButton(
+
+                        //       shape: RoundedRectangleBorder(
+                        //           borderRadius: BorderRadius.circular(60)),
+                        //       color: Colors.red,
+                        //       onPressed: () {
+                        //         _onCallEnd(context, seconds ?? 0);
+
+                        //         textEditingController.clear();
+                        //       },
+                        //       child: Icon(
+                        //         Icons.call_end,
+                        //         color: Colors.white,
+                        //         size: 18,
+                        //       )),
+                        // )
+                      )
+                    : Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Flexible(
+                                child: SizedBox(
+                                  height: 50,
+                                  child: TextField(
+                                    controller: textEditingController,
+                                    decoration: InputDecoration(
+                                      fillColor: Colors.white24,
+                                      filled: true,
+                                      hintText: "   Type a message...",
+                                      contentPadding: const EdgeInsets.only(
+                                          left: 8.0, bottom: 8.0, top: 8.0),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide:
+                                            BorderSide(color: Colors.white24),
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide:
+                                            BorderSide(color: Colors.white24),
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              SizedBox(
+                                height: 50,
+                                width: 70,
+                                child: FlatButton(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30)),
+                                  color:
+                                      !isKeyboard ? Colors.red : Colors.green,
+                                  onPressed: () {},
+                                  child: Icon(
+                                    !isKeyboard ? Icons.call_end : Icons.send,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
               ],
             ));
       case 2:
+        colorOfGreenDot = true;
+        isSearching = false;
+        if (playNow) {
+          playJoinCallSoundEffect();
+          vibrateCallConnected();
+          playNow = false;
+        }
+
         return Container(
             height: screen.height,
             width: screen.width,
@@ -232,7 +434,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
             padding: const EdgeInsets.all(12.0),
           ),
           RawMaterialButton(
-            onPressed: () => _onCallEnd(context),
+            onPressed: () => _onCallEnd(context, seconds),
             child: Icon(
               Icons.call_end,
               color: Colors.white,
@@ -284,6 +486,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     var isKeyboard = MediaQuery.of(context).viewInsets.bottom != 0;
     var keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     var screen = MediaQuery.of(context).size;
+
     return Column(
       children: [
         Expanded(
@@ -307,8 +510,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   reverse: true,
                   itemCount: snapshot.data?.docs.length ?? 0,
                   itemBuilder: (BuildContext context, int index) {
+                    int itemCount = snapshot.data?.docs.length ?? 0;
                     var userNo = snapshot.data?.docs[index]["userNo"] ?? "1";
                     String chatText = snapshot.data?.docs[index]["text"] ?? "";
+                    var userNoForVibration =
+                        snapshot.data?.docs.first.get("userNo") ?? "1";
+
                     if (!snapshot.hasData) {
                       print("no data in snapshot of chats");
                     }
@@ -316,6 +523,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       print("error in snapshot of chats");
                     }
                     if (chatText != "") {
+                      if (itemCount > tempLengthOfChatListForVibtation &&
+                          userNoForVibration!=widget.userNo) {
+                        vibrateForChat();
+                        tempLengthOfChatListForVibtation = itemCount;
+                      }
                       return userNo != widget.userNo
                           ? Align(
                               alignment: Alignment.centerLeft,
@@ -415,7 +627,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   color: !isKeyboard ? Colors.red : Colors.green,
                   onPressed: () {
                     !isKeyboard
-                        ? _onCallEnd(context)
+                        ? _onCallEnd(context, seconds)
                         : sendText(textEditingController.text);
                     textEditingController.clear();
                   },
@@ -436,8 +648,33 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  _onCallEnd(BuildContext context) async {
-    Navigator.pop(context);
+  backAlert() {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text("Do you want to exit?"),
+        actions: [
+          TextButton(
+              child: Text("Yes"),
+              onPressed: () {
+                Navigator.pop(context);
+
+                _onCallEnd(context, seconds ?? 0);
+              }),
+          TextButton(
+            child: Text("No"),
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  _onCallEnd(BuildContext context, int totalConversationTimeInSec) async {
+    Navigator.pop(context, totalConversationTimeInSec);
     FirebaseFirestore.instance
         .collection("videoCallsUsers-online")
         .doc(widget.channelName)
@@ -472,11 +709,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
         .delete();
   }
 
+  var randomBot;
   Duration duration = Duration();
   Timer? timer;
+  var seconds;
 
   bool countDown = true;
   void startTimer() {
+    timer2?.cancel();
     timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
   }
 
@@ -484,16 +724,42 @@ class _VideoCallPageState extends State<VideoCallPage> {
     final views = _getRenderViews();
     final addSeconds = countDown ? 1 : -1;
     setState(() {
-      final seconds = duration.inSeconds + addSeconds;
+      seconds = duration.inSeconds + addSeconds;
 
       if (views.length == 1 || seconds == 300) {
         timer?.cancel();
-        _onCallEnd(context);
+
+        _onCallEnd(context, seconds);
       }
+
       if (seconds < 0) {
         timer?.cancel();
       } else {
         duration = Duration(seconds: seconds);
+      }
+    });
+  }
+
+  Duration duration2 = Duration(seconds: 60);
+  Timer? timer2;
+  var seconds2 = 60;
+  bool countDown2 = true;
+  void timerToEndSearching() {
+    timer2 = Timer.periodic(Duration(seconds: 1), (_) => addTime2());
+  }
+
+  void addTime2() {
+    final addSeconds = countDown2 ? -1 : 1;
+    setState(() {
+      seconds2 = duration2.inSeconds + addSeconds;
+      if (seconds2 == 5) {
+        randomBot = getRandomElement();
+      }
+      if (seconds2 <= -3) {
+        _onCallEnd(context, seconds ?? 0);
+        timer2?.cancel();
+      } else {
+        duration2 = Duration(seconds: seconds2);
       }
     });
   }
@@ -514,7 +780,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     // var screen = MediaQuery.of(context).size;
     // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     return WillPopScope(
-        onWillPop: () => _onCallEnd(context),
+        onWillPop: () => backAlert(),
         child: StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("videoCallsMessages")
@@ -538,29 +804,49 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       children: <Widget>[
                         _viewRows(),
                         Positioned(
-                            top: 25,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(widget.userNo == "1"
-                                    ? "$userName2"
-                                    : "$userName1",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),),
-                                    SizedBox(width: 5,),
-                                    Icon(Icons.brightness_1,color:widget.userNo == "1"? Colors.white:Colors.green,size: 10,)
-                              ],
-                            ),),
+                          top: 25,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                widget.userNo == "1"
+                                    ? userName2 == null
+                                        ? ""
+                                        : "$userName2"
+                                    : userName1 == null
+                                        ? ""
+                                        : "$userName1",
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              seconds2 >= 0
+                                  ? Icon(
+                                      Icons.brightness_1,
+                                      color: colorOfGreenDot
+                                          ? Colors.green
+                                          : Colors.amber,
+                                      size: 10,
+                                    )
+                                  : SizedBox()
+                            ],
+                          ),
+                        ),
                         Positioned(
                             top: 5,
                             left: 15,
                             child: IconButton(
                               icon: Icon(
                                 Icons.flip_camera_ios_outlined,
-                                color: Colors.white,
+                                color:
+                                    isSearching ? Colors.black : Colors.white,
                               ),
                               onPressed: () => _onSwitchCamera(),
                             )),
-                        chatRoom(widget.msgDocId!)
+                        !isSearching ? chatRoom(widget.msgDocId!) : SizedBox()
                       ],
                     ),
                   ),

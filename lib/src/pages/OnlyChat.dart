@@ -1,8 +1,9 @@
 import 'dart:async';
-
+import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 
 class OnlyChatPage extends StatefulWidget {
   String joincode;
@@ -35,8 +36,8 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
     }
   }
 
-  _onCallEnd(BuildContext context) async {
-    Navigator.pop(context);
+  _onCallEnd(BuildContext context, int seconds) async {
+    Navigator.pop(context, seconds);
     FirebaseFirestore.instance
         .collection("onlyChatUsers-online")
         .doc(widget.joincode)
@@ -71,6 +72,30 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
         .delete();
   }
 
+  void vibrateCallConnected() async {
+    if(isVibration){
+    if (await Vibration.hasCustomVibrationsSupport() != null) {
+      Vibration.vibrate(duration: 600);
+    } else {
+      Vibration.vibrate();
+      await Future.delayed(Duration(milliseconds: 300));
+      Vibration.vibrate();
+    }
+    }
+  }
+
+  void vibrateForChat() async {
+    if(isVibration){
+    if (await Vibration.hasCustomVibrationsSupport() != null) {
+      Vibration.vibrate(duration: 300);
+    } else {
+      Vibration.vibrate();
+      await Future.delayed(Duration(milliseconds: 150));
+      Vibration.vibrate();
+    }
+    }
+  }
+
   Duration duration = Duration();
   Timer? timer;
 
@@ -79,10 +104,11 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
   }
 
   bool countDown = true;
+  var seconds;
   void addTime() {
     final addSeconds = countDown ? 1 : -1;
     setState(() {
-      final seconds = duration.inSeconds + addSeconds;
+      seconds = duration.inSeconds + addSeconds;
 
       FirebaseFirestore.instance
           .collection("onlyChatMessages")
@@ -91,7 +117,7 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
           .then((value) {
         if (value.get("someOneEndsCall") == true) {
           timer?.cancel();
-          _onCallEnd(context);
+          _onCallEnd(context, seconds ?? 0);
         }
       });
 
@@ -107,15 +133,43 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    startTimer();
   }
 
   @override
   void dispose() {
     timer?.cancel();
+    textEditingController.dispose();
     super.dispose();
   }
 
+  backAlert() {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text("Do you want to exit?"),
+        actions: [
+          TextButton(
+              child: Text("Yes"),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+                _onCallEnd(context, seconds ?? 0);
+              }),
+          TextButton(
+            child: Text("No"),
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool makeBothUserConnectedFalse = true;
+  bool tempMakeConditionFalse = true;
+  int tempLengthOfChatList = 0;
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
@@ -123,8 +177,9 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
     var isKeyboard = MediaQuery.of(context).viewInsets.bottom != 0;
     double statusBarHeight = MediaQuery.of(context).padding.top;
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+
     return WillPopScope(
-      onWillPop: () => _onCallEnd(context),
+      onWillPop: () => backAlert(),
       child: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection("onlyChatMessages")
@@ -136,15 +191,22 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
 
             try {
               bothUserConnected = snapshot.data?["bothUserConnected"];
-              if (widget.userNo == 1) {
+              if (bothUserConnected == true && makeBothUserConnectedFalse) {
+                startTimer();
+                makeBothUserConnectedFalse = false;
+              }
+              if (widget.userNo == "1") {
                 OtherUserName = snapshot.data?["userName2"];
               } else {
                 OtherUserName = snapshot.data?["userName1"];
               }
-
-              ;
             } catch (e) {
               print(e);
+            }
+
+            if (bothUserConnected == true && tempMakeConditionFalse) {
+              vibrateCallConnected();
+              tempMakeConditionFalse = false;
             }
 
             return Scaffold(
@@ -202,6 +264,10 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
                               reverse: true,
                               itemCount: snapshot.data?.docs.length ?? 0,
                               itemBuilder: (BuildContext context, int index) {
+                                var userNoForVibration =
+                                    snapshot.data?.docs.first.get("userNo") ??
+                                        "1";
+
                                 var userNo =
                                     snapshot.data?.docs[index]["userNo"] ?? "1";
                                 String chatText =
@@ -211,6 +277,14 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
                                 }
                                 if (snapshot.hasError) {
                                   print("error in snapshot of chats");
+                                }
+                                int chatListCount =
+                                    snapshot.data?.docs.length ?? 0;
+
+                                if (chatListCount > tempLengthOfChatList &&
+                                    userNoForVibration != widget.userNo) {
+                                  vibrateForChat();
+                                  tempLengthOfChatList = chatListCount;
                                 }
                                 if (chatText != "") {
                                   return userNo != widget.userNo
@@ -345,7 +419,7 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
                               color: !isKeyboard ? Colors.red : Colors.blue,
                               onPressed: () {
                                 !isKeyboard
-                                    ? _onCallEnd(context)
+                                    ? _onCallEnd(context, seconds ?? 0)
                                     : sendText(textEditingController.text);
                                 textEditingController.clear();
                               },
