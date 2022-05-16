@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
+import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
@@ -22,10 +23,16 @@ class VideoCallPage extends StatefulWidget {
 
   final String? msgDocId;
   final String? userNo;
+  final String? dltDoc;
 
   /// Creates a call page with given channel name.
   const VideoCallPage(
-      {Key? key, this.channelName, this.role, this.msgDocId, this.userNo})
+      {Key? key,
+      this.channelName,
+      this.role,
+      this.msgDocId,
+      this.userNo,
+      this.dltDoc})
       : super(key: key);
 
   @override
@@ -36,6 +43,7 @@ AudioPlayer plr1 = AudioPlayer();
 AudioCache player1 = AudioCache(fixedPlayer: plr1);
 
 class _VideoCallPageState extends State<VideoCallPage> {
+  CommonMethods cm = CommonMethods();
   bool playNow = true;
   final _users = <int>[];
   final _infoStrings = <String>[];
@@ -137,32 +145,32 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   playJoinCallSoundEffect() async {
-    if(isSound){
-    await player1.play("joinCall.mp3");
+    if (isSound) {
+      await player1.play("joinCall.mp3");
     }
   }
 
   void vibrateCallConnected() async {
-    if(isVibration){
-    if (await Vibration.hasCustomVibrationsSupport() != null) {
-      Vibration.vibrate(duration: 600);
-    } else {
-      Vibration.vibrate();
-      await Future.delayed(Duration(milliseconds: 300));
-      Vibration.vibrate();
-    }
+    if (isVibration) {
+      if (await Vibration.hasCustomVibrationsSupport() != null) {
+        Vibration.vibrate(duration: 600);
+      } else {
+        Vibration.vibrate();
+        await Future.delayed(Duration(milliseconds: 300));
+        Vibration.vibrate();
+      }
     }
   }
 
   void vibrateForChat() async {
-    if(isVibration){
-    if (await Vibration.hasCustomVibrationsSupport() != null) {
-      Vibration.vibrate(duration: 300);
-    } else {
-      Vibration.vibrate();
-      await Future.delayed(Duration(milliseconds: 150));
-      Vibration.vibrate();
-    }
+    if (isVibration) {
+      if (await Vibration.hasCustomVibrationsSupport() != null) {
+        Vibration.vibrate(duration: 300);
+      } else {
+        Vibration.vibrate();
+        await Future.delayed(Duration(milliseconds: 150));
+        Vibration.vibrate();
+      }
     }
   }
 
@@ -197,6 +205,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
       startTimer();
       timerStated = true;
     }
+
     switch (views.length) {
       case 1:
         return Container(
@@ -217,42 +226,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
                             Image.asset(
                               "searching.gif",
                             ),
-                            seconds2 >= 0
-                                ? Text("Tip: Always be kind to all!",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: Colors.black))
-                                : Text("")
+                            // seconds2 >= 0
+                            //     ? Text(widget.channelName??"",
+                            //         style: TextStyle(
+                            //             fontWeight: FontWeight.bold,
+                            //             fontSize: 15,
+                            //             color: Colors.black))
+                            //     : Text("")
                           ],
                         ),
-                        // child: AvatarGlow(
-                        //   glowColor: Colors.blue,
-                        //   endRadius: 130.0,
-                        //   duration: Duration(milliseconds: 2000),
-                        //   repeat: true,
-                        //   showTwoGlows: true,
-                        //   repeatPauseDuration: Duration(milliseconds: 100),
-                        //   child: Material(
-                        //       // Replace this child with your own
-                        //       elevation: 8.0,
-                        //       shape: CircleBorder(),
-                        //       child: Container(
-                        //         height: 130,
-                        //         width: 130,
-                        //         decoration: BoxDecoration(
-                        //             color: Colors.white,
-                        //             shape: BoxShape.circle),
-                        //         child: Center(
-                        //             child: Text(
-                        //           "$seconds2",
-                        //           style: TextStyle(
-                        //               fontWeight: FontWeight.bold,
-                        //               fontSize: 22,
-                        //               color: Colors.teal),
-                        //         )),
-                        //       )),
-                        // ),
                       )
                     : Center(
                         child: Container(
@@ -298,25 +280,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                             ),
                           ),
                         ),
-                        // child: SizedBox(
-                        //   height: 60,
-                        //   width: 60,
-                        //   child: FlatButton(
-
-                        //       shape: RoundedRectangleBorder(
-                        //           borderRadius: BorderRadius.circular(60)),
-                        //       color: Colors.red,
-                        //       onPressed: () {
-                        //         _onCallEnd(context, seconds ?? 0);
-
-                        //         textEditingController.clear();
-                        //       },
-                        //       child: Icon(
-                        //         Icons.call_end,
-                        //         color: Colors.white,
-                        //         size: 18,
-                        //       )),
-                        // )
                       )
                     : Align(
                         alignment: Alignment.bottomCenter,
@@ -385,6 +348,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
           vibrateCallConnected();
           playNow = false;
         }
+        FirebaseFirestore.instance
+            .collection("videoCallsUsers-online")
+            .doc(widget.dltDoc)
+            .delete();
 
         return Container(
             height: screen.height,
@@ -407,9 +374,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 )
               ],
             ));
-      default:
     }
-    return Container();
+    return SizedBox();
   }
 
   /// Toolbar layout
@@ -524,7 +490,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     }
                     if (chatText != "") {
                       if (itemCount > tempLengthOfChatListForVibtation &&
-                          userNoForVibration!=widget.userNo) {
+                          userNoForVibration != widget.userNo) {
                         vibrateForChat();
                         tempLengthOfChatListForVibtation = itemCount;
                       }
@@ -789,9 +755,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
             builder: (context, snapshot) {
               var userName1;
               var userName2;
+              var otherUserEmail;
               try {
                 userName1 = snapshot.data?["userName1"];
                 userName2 = snapshot.data?["userName2"];
+                if (widget.userNo == "1") {
+                  otherUserEmail = snapshot.data?["userEmail2"];
+                } else {
+                  otherUserEmail = snapshot.data?["userEmail1"];
+                }
               } catch (e) {}
 
               return SafeArea(
@@ -824,13 +796,36 @@ class _VideoCallPageState extends State<VideoCallPage> {
                                 width: 5,
                               ),
                               seconds2 >= 0
-                                  ? Icon(
-                                      Icons.brightness_1,
-                                      color: colorOfGreenDot
-                                          ? Colors.green
-                                          : Colors.amber,
-                                      size: 10,
-                                    )
+                                  ? PopupMenuButton(
+                                      icon: Icon(Icons.more_vert,
+                                          color: colorOfGreenDot
+                                              ? Colors.white
+                                              : Colors.amber), // add this line
+                                      itemBuilder: (_) =>
+                                          <PopupMenuItem<String>>[
+                                            new PopupMenuItem<String>(
+                                                height: 20,
+                                                child: Container(
+                                                    width: 50,
+                                                    child: Text(
+                                                      "Report",
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                      ),
+                                                    )),
+                                                value: 'Report'),
+                                          ],
+                                      onSelected: (index) async {
+                                        switch (index) {
+                                          case 'Report':
+                                            {
+                                              print(
+                                                  "object=========================================");
+                                              cm.reportUser(otherUserEmail);
+                                              break;
+                                            }
+                                        }
+                                      })
                                   : SizedBox()
                             ],
                           ),

@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "345339685076",
+    "firebase_url": "https://globalcalls-b0a61-default-rtdb.firebaseio.com",
     "project_id": "globalcalls-b0a61",
     "storage_bucket": "globalcalls-b0a61.appspot.com"
   },
@@ -14,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "345339685076-qhjdusi1ansrsi0pjadgem26r468thi9.apps.googleusercontent.com",
+          "client_id": "345339685076-mupv1r4k4rrishrn7dk7diqn5etk7mkh.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.ultimaterocker.globalCalls",
-            "certificate_hash": "51c022a37b62a19fd52597022a9157d1a637e4eb"
+            "certificate_hash": "8df892940f06cb6dcc4130152f6020838c39ce40"
           }
         },
         {

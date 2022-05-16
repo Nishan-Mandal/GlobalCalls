@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
+import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:agora_flutter_quickstart/src/utils/settings.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -33,6 +34,7 @@ class OnlyCallPage extends StatefulWidget {
  AudioPlayer plr1 = AudioPlayer();
  AudioCache player1 = AudioCache(fixedPlayer: plr1);
  class _OnlyCallPageState extends State<OnlyCallPage> {
+   CommonMethods cm=CommonMethods();
   final _users = <int>[];
   final _infoStrings = <String>[];
   bool muted = false;
@@ -277,7 +279,37 @@ class OnlyCallPage extends StatefulWidget {
                   style: TextStyle(fontSize: 30, color: Colors.black),
                 ),
                 SizedBox(width: 10,),
-                Icon(Icons.brightness_1,color: Colors.green,size: 10,)
+                Icon(Icons.brightness_1,color: Colors.green,size: 10,),
+                SizedBox(width: 10,),
+                   
+                                   PopupMenuButton(
+                                      icon: Icon(Icons.more_vert,
+                                          color:  Colors.white
+                                              ), // add this line
+                                      itemBuilder: (_) =>
+                                          <PopupMenuItem<String>>[
+                                            new PopupMenuItem<String>(
+                                                height: 20,
+                                                child: Container(
+                                                    width: 50,
+                                                    child: Text(
+                                                      "Report",
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                      ),
+                                                    )),
+                                                value: 'report'),
+                                          ],
+                                      onSelected: (index) async {
+                                        switch (index) {
+                                          case 'report':
+                                          // TO DO......//
+                                            // cm.reportUser(otherUserEmail);
+
+                                            break;
+                                        }
+                                      })
+                                 
               ],
             ),
             buildTime(),

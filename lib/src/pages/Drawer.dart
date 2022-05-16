@@ -57,19 +57,16 @@ class _drawerState extends State<drawer> {
           "email": "${googleUser.email}",
           "photo": "${googleUser.photoUrl}",
           "coins": 0,
-          "removeAds": false
+          "removeAds": false,
+          "reports":0
         });
       }
     });
-    // FirebaseFirestore.instance.collection("users").doc(googleUser.email).update({
-    //   "name": "${googleUser.displayName}",
-    //   "email": "${googleUser.email}",
-    //   "photo": "${googleUser.photoUrl}",
-    // });
-
-    setState(() {});
-    // Once signed in, return the UserCredential
+ 
+      Navigator.pop(context);
+                      Navigator.pop(context);
     return await FirebaseAuth.instance.signInWithCredential(credential);
+    
   }
 
   removeAdsPopup(var removeAds, var coinData) {
@@ -95,12 +92,12 @@ class _drawerState extends State<drawer> {
               child: Text("Yes"),
               onPressed: () async {
                 if (coinData >= 100) {
-                  FirebaseFirestore.instance
+                 await FirebaseFirestore.instance
                       .collection("users")
                       .doc(FirebaseAuth.instance.currentUser!.email)
                       .get()
-                      .then((value) {
-                    FirebaseFirestore.instance
+                      .then((value) async {
+                   await FirebaseFirestore.instance
                         .collection("users")
                         .doc(FirebaseAuth.instance.currentUser!.email)
                         .update({
@@ -108,6 +105,8 @@ class _drawerState extends State<drawer> {
                       "removeAds": cm.getCurrentDate()
                     });
                   });
+                  Navigator.pop(context);
+                  Navigator.pop(context);
                   Navigator.pop(context);
                 } else if (removeAds != cm.getCurrentDate()) {
                   showDialog(
@@ -154,9 +153,9 @@ class _drawerState extends State<drawer> {
                     width: 100,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      // image: DecorationImage(
-                      //     image: AssetImage("appLogo.png"),
-                      //     fit: BoxFit.fill)
+                      image: DecorationImage(
+                          image: AssetImage("appIcon.png"),
+                          fit: BoxFit.fill)
                     ),
                   ),
                   SizedBox(
@@ -211,7 +210,7 @@ class _drawerState extends State<drawer> {
                     onTap: () {
                       if (ratingStars > 2) {
                         StoreRedirect.redirect(
-                          androidAppId: "com.ultimateRocker.sleepsound2021",
+                          androidAppId: "com.ultimaterocker.globalCalls",
                         );
                         Navigator.pop(context);
                       } else {
@@ -466,7 +465,7 @@ class _drawerState extends State<drawer> {
                       onTap: () async {
                         if (FirebaseAuth.instance.currentUser == null) {
                           await signInWithGoogle();
-                          setState(() {});
+                          
                         } else if (removeAds != cm.getCurrentDate()) {
                           removeAdsPopup(removeAds, coinData);
                         }

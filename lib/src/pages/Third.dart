@@ -25,20 +25,21 @@ class ThirdPage extends StatefulWidget {
   String userGender;
   String searchForWhome;
   int coins;
-  ThirdPage(this.displayName, this.userGender, this.searchForWhome, this.coins);
+  String uid;
+  ThirdPage(this.displayName, this.userGender, this.searchForWhome, this.coins,this.uid);
   @override
   _ThirdPageState createState() => _ThirdPageState();
 }
 
 class _ThirdPageState extends State<ThirdPage> {
-  CommonMethods cm=new CommonMethods();
+  CommonMethods cm = new CommonMethods();
   bool showAds = true;
+
 
   /// create a channelController to retrieve text value
   final _channelController = TextEditingController();
 
   /// if channel textField is validated to have error
-
   ClientRole? _role = ClientRole.Broadcaster;
   VideoAds videoAds = new VideoAds();
   int countForAds = 0;
@@ -56,12 +57,11 @@ class _ThirdPageState extends State<ThirdPage> {
   @override
   void initState() {
     super.initState();
-    showAds?videoAds.loadRewardedAd1():null;
+    showAds ? videoAds.loadRewardedAd1() : null;
     willShowAds();
   }
 
-
-    willShowAds() async {
+  willShowAds() async {
     if (FirebaseAuth.instance.currentUser != null) {
       await FirebaseFirestore.instance
           .collection("users")
@@ -77,7 +77,6 @@ class _ThirdPageState extends State<ThirdPage> {
     }
   }
 
-
   coinUpdateInDatabase() {
     FirebaseFirestore.instance
         .collection("users")
@@ -85,11 +84,12 @@ class _ThirdPageState extends State<ThirdPage> {
         .update({"coins": widget.coins});
   }
 
-  String userNo = "";
-  addUserVideoCall(
-      String displayName, String usersGender, List searchForWhome) async {
+  addUserVideoCall(String displayName, String usersGender, List searchForWhome,
+      String lastJoinCode) async {
     List temp = ["random", "random"];
+
     OverlayState? overlayState = Overlay.of(context);
+
     OverlayEntry overlayEntry = OverlayEntry(
         builder: (context) => Scaffold(
               backgroundColor: Colors.black54,
@@ -111,66 +111,81 @@ class _ThirdPageState extends State<ThirdPage> {
       await FirebaseFirestore.instance
           .collection('videoCallsUsers-online')
           .where("searchForWhome", arrayContains: "random")
+          .where("searching", isEqualTo: true)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
           joinCode = doc["joinCode"];
         });
       });
-      if (joinCode == "null") {
+
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('videoCallsUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('videoCallsUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+              var message = await FirebaseFirestore.instance
+                  .collection("videoCallsMessages")
+                  .doc(joinCode);
+
+              message.update({"userName2": displayName,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message
+                  .collection("chats")
+                  .doc()
+                  .set({"userNo": "2", "text": null});
+              onJoin(joinCode, "2", "videoCall");
+              FirebaseFirestore.instance
+                  .collection('videoCallsUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserVideoCall(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref = FirebaseFirestore.instance
             .collection("videoCallsUsers-online")
             .doc();
-        setState(() {
-          joinCode = ref.id;
-        });
         ref.set({
           "name": displayName,
           "count": "${count}",
-          "joinCode": joinCode,
+          "joinCode": ref.id,
           "gender": usersGender,
           "searchForWhome": FieldValue.arrayUnion(searchForWhome),
+          "timeStamp": FieldValue.serverTimestamp(),
+          "searching": true
         });
-        setState(() {
-          userNo = "1";
-        });
+
         var messag = await FirebaseFirestore.instance
             .collection("videoCallsMessages")
-            .doc(joinCode);
+            .doc(ref.id);
 
         messag.set({
           "userName1": displayName,
           "userName2": " ",
+          "userEmail1":FirebaseAuth.instance.currentUser?.email,
+          "userEmail2":null,
           "someOneEndsCall": false
         });
-        messag.collection("chats").doc().set({"userNo": userNo, "text": null});
-        onJoin(joinCode, userNo, "videoCall");
-        overlayEntry.remove();
-      } else {
-        setState(() {
-          userNo = "2";
-        });
+        messag.collection("chats").doc().set({"userNo": "1", "text": null});
 
-        await FirebaseFirestore.instance
-            .collection('videoCallsUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("videoCallsUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
-
-        var messag = await FirebaseFirestore.instance
-            .collection("videoCallsMessages")
-            .doc(joinCode);
-
-        messag.update({"userName2": displayName});
-        messag.collection("chats").doc().set({"userNo": userNo, "text": null});
-        onJoin(joinCode, userNo, "videoCall");
+        onJoin(ref.id, "1", "videoCall");
         overlayEntry.remove();
       }
 
@@ -188,67 +203,84 @@ class _ThirdPageState extends State<ThirdPage> {
       String joinCode = "null";
       await FirebaseFirestore.instance
           .collection('videoCallsUsers-online')
-          .where("gender", whereIn: searchForWhome)
           .where("searchForWhome", arrayContains: usersGender)
+          .where("gender", whereIn: searchForWhome)
+          .where("searching", isEqualTo: true)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
           joinCode = doc["joinCode"];
         });
       });
-      if (joinCode == "null") {
+
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('videoCallsUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('videoCallsUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+              var message = await FirebaseFirestore.instance
+                  .collection("videoCallsMessages")
+                  .doc(joinCode);
+
+              message.update({"userName2": displayName,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message
+                  .collection("chats")
+                  .doc()
+                  .set({"userNo": "2", "text": null});
+              onJoin(joinCode, "2", "videoCall");
+              FirebaseFirestore.instance
+                  .collection('videoCallsUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserVideoCall(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref = FirebaseFirestore.instance
             .collection("videoCallsUsers-online")
             .doc();
-        setState(() {
-          joinCode = ref.id;
-        });
         ref.set({
-          "count": "${count}",
           "name": displayName,
-          "joinCode": joinCode,
+          "count": "${count}",
+          "joinCode": ref.id,
           "gender": usersGender,
-          "searchForWhome": FieldValue.arrayUnion(searchForWhome)
-        });
-        setState(() {
-          userNo = "1";
+          "searchForWhome": FieldValue.arrayUnion(searchForWhome),
+          "timeStamp": FieldValue.serverTimestamp(),
+          "searching": true
         });
 
         var messag = await FirebaseFirestore.instance
             .collection("videoCallsMessages")
-            .doc(joinCode);
+            .doc(ref.id);
+
         messag.set({
           "userName1": displayName,
           "userName2": " ",
+          "userEmail1":FirebaseAuth.instance.currentUser?.email,
+          "userEmail2":null,
           "someOneEndsCall": false
         });
-        messag.collection("chats").doc().set({"userNo": userNo, "text": null});
-        onJoin(joinCode, userNo, "videoCall");
-        overlayEntry.remove();
-      } else {
-        setState(() {
-          userNo = "2";
-        });
+        messag.collection("chats").doc().set({"userNo": "1", "text": null});
 
-        var messag = await FirebaseFirestore.instance
-            .collection("videoCallsMessages")
-            .doc(joinCode);
-        messag.update({"userName2": displayName});
-        messag.collection("chats").doc().set({"userNo": userNo, "text": null});
-        onJoin(joinCode, userNo, "videoCall");
+        onJoin(ref.id, "1", "videoCall");
         overlayEntry.remove();
-        await FirebaseFirestore.instance
-            .collection('videoCallsUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("videoCallsUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
       }
 
       await FirebaseFirestore.instance
@@ -259,8 +291,8 @@ class _ThirdPageState extends State<ThirdPage> {
   }
 
   String userNoOnlyCall = "";
-  addUserOnlyCall(
-      String displayName, String usersGender, List searchForWhome) async {
+  addUserOnlyCall(String displayName, String usersGender, List searchForWhome,
+      String lastJoinCode) async {
     OverlayState? overlayState = Overlay.of(context);
     OverlayEntry overlayEntry = OverlayEntry(
         builder: (context) => Scaffold(
@@ -272,119 +304,157 @@ class _ThirdPageState extends State<ThirdPage> {
             ));
 
     overlayState?.insert(overlayEntry);
-
-    var databaseCount = await FirebaseFirestore.instance
-        .collection("onlyCallsCount")
-        .doc("JtAaJIMUxaxjpBfSt6kM")
-        .get()
-        .then((value) => value.get("count"));
-    int count = databaseCount + 1;
-    String joinCode = "null";
     List temp = ["random", "random"];
     if (listEquals(searchForWhome, temp) == true) {
+      var databaseCount = await FirebaseFirestore.instance
+          .collection("onlyCallsCount")
+          .doc("JtAaJIMUxaxjpBfSt6kM")
+          .get()
+          .then((value) => value.get("count"));
+      int count = databaseCount + 1;
+      String joinCode = "null";
       await FirebaseFirestore.instance
           .collection('onlyCallsUsers-online')
           .where("searchForWhome", arrayContains: "random")
+          .where("searching", isEqualTo: true)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
           joinCode = doc["joinCode"];
         });
       });
-      if (joinCode == "null") {
+
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('onlyCallsUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('onlyCallsUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+
+              onJoin(joinCode, "2", "onlyCall");
+              FirebaseFirestore.instance
+                  .collection('onlyCallsUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserOnlyCall(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref = FirebaseFirestore.instance
             .collection("onlyCallsUsers-online")
             .doc();
-        setState(() {
-          joinCode = ref.id;
-        });
         ref.set({
-          "count": "${count}",
           "name": displayName,
-          "joinCode": joinCode,
+          "count": "${count}",
+          "joinCode": ref.id,
           "gender": usersGender,
           "searchForWhome": FieldValue.arrayUnion(searchForWhome),
-        });
-        setState(() {
-          userNoOnlyCall = "1";
-        });
-      } else {
-        setState(() {
-          userNoOnlyCall = "2";
+          "timeStamp": FieldValue.serverTimestamp(),
+          "searching": true
         });
 
-        await FirebaseFirestore.instance
-            .collection('onlyCallsUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("onlyCallsUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
+        onJoin(ref.id, "1", "onlyCall");
+        overlayEntry.remove();
       }
+
+      await FirebaseFirestore.instance
+          .collection("onlyCallsCount")
+          .doc("JtAaJIMUxaxjpBfSt6kM")
+          .update({"count": count});
     } else {
+      var databaseCount = await FirebaseFirestore.instance
+          .collection("onlyCallsCount")
+          .doc("JtAaJIMUxaxjpBfSt6kM")
+          .get()
+          .then((value) => value.get("count"));
+      int count = databaseCount + 1;
+      String joinCode = "null";
       await FirebaseFirestore.instance
           .collection('onlyCallsUsers-online')
-          .where("gender", whereIn: searchForWhome)
           .where("searchForWhome", arrayContains: usersGender)
+          .where("gender", whereIn: searchForWhome)
+          .where("searching", isEqualTo: true)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
           joinCode = doc["joinCode"];
         });
       });
-      if (joinCode == "null") {
+
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('onlyCallsUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('onlyCallsUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+              onJoin(joinCode, "2", "onlyCall");
+              FirebaseFirestore.instance
+                  .collection('onlyCallsUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserOnlyCall(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref = FirebaseFirestore.instance
             .collection("onlyCallsUsers-online")
             .doc();
-        setState(() {
-          joinCode = ref.id;
-        });
         ref.set({
-          "count": "${count}",
           "name": displayName,
-          "joinCode": joinCode,
+          "count": "${count}",
+          "joinCode": ref.id,
           "gender": usersGender,
-          "searchForWhome": FieldValue.arrayUnion(searchForWhome)
-        });
-        setState(() {
-          userNoOnlyCall = "1";
-        });
-      } else {
-        setState(() {
-          userNoOnlyCall = "2";
+          "searchForWhome": FieldValue.arrayUnion(searchForWhome),
+          "timeStamp": FieldValue.serverTimestamp(),
+          "searching": true
         });
 
-        await FirebaseFirestore.instance
-            .collection('onlyCallsUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("onlyCallsUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
+        onJoin(ref.id, "1", "onlyCall");
+        overlayEntry.remove();
       }
-    }
 
-    onJoin(joinCode, userNo, "onlyCall");
-    overlayEntry.remove();
-    await FirebaseFirestore.instance
-        .collection("onlyCallsCount")
-        .doc("JtAaJIMUxaxjpBfSt6kM")
-        .update({"count": count});
+      await FirebaseFirestore.instance
+          .collection("onlyCallsCount")
+          .doc("JtAaJIMUxaxjpBfSt6kM")
+          .update({"count": count});
+    }
   }
 
   String userNoOnlyChat = "";
-  addUserOnlyChat(
-      String displayName, String usersGender, List searchForWhome) async {
+  addUserOnlyChat(String displayName, String usersGender, List searchForWhome,
+      String lastJoinCode) async {
     OverlayState? overlayState = Overlay.of(context);
     OverlayEntry overlayEntry = OverlayEntry(
         builder: (context) => Scaffold(
@@ -396,19 +466,20 @@ class _ThirdPageState extends State<ThirdPage> {
             ));
 
     overlayState?.insert(overlayEntry);
-    var databaseCount = await FirebaseFirestore.instance
-        .collection("onlyChatCount")
-        .doc("39uC3A9gR4obTHkkljAU")
-        .get()
-        .then((value) => value.get("count"));
-    int count = databaseCount + 1;
-    String joinCode = "null";
 
     List temp = ["random", "random"];
     if (listEquals(searchForWhome, temp) == true) {
+      var databaseCount = await FirebaseFirestore.instance
+          .collection("onlyChatCount")
+          .doc("39uC3A9gR4obTHkkljAU")
+          .get()
+          .then((value) => value.get("count"));
+      int count = databaseCount + 1;
+      String joinCode = "null";
       await FirebaseFirestore.instance
           .collection('onlyChatUsers-online')
           .where("searchForWhome", arrayContains: "random")
+          .orderBy("count")
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
@@ -416,22 +487,64 @@ class _ThirdPageState extends State<ThirdPage> {
         });
       });
 
-      if (joinCode == "null") {
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('onlyChatUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('onlyChatUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+              userNoOnlyChat = "2";
+
+              var message = await FirebaseFirestore.instance
+                  .collection("onlyChatMessages")
+                  .doc(joinCode);
+              message.update(
+                  {"userName2": displayName, "bothUserConnected": true,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message
+                  .collection("chats")
+                  .doc()
+                  .set({"userNo": userNoOnlyChat, "text": null});
+
+              FirebaseFirestore.instance
+                  .collection('onlyChatUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserOnlyChat(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref =
             FirebaseFirestore.instance.collection("onlyChatUsers-online").doc();
-        setState(() {
-          joinCode = ref.id;
-        });
+
+        joinCode = ref.id;
+
         ref.set({
           "count": "${count}",
           "name": displayName,
           "joinCode": joinCode,
           "gender": usersGender,
           "searchForWhome": FieldValue.arrayUnion(searchForWhome),
+          
         });
-        setState(() {
-          userNoOnlyChat = "1";
-        });
+
+        userNoOnlyChat = "1";
+
         var message = await FirebaseFirestore.instance
             .collection("onlyChatMessages")
             .doc(joinCode);
@@ -439,44 +552,35 @@ class _ThirdPageState extends State<ThirdPage> {
           "userName1": displayName,
           "userName2": " ",
           "bothUserConnected": false,
-          "someOneEndsCall": false
+          "someOneEndsCall": false,
+          "userEmail1":FirebaseAuth.instance.currentUser?.email,
+          "userEmail2":null
         });
         message
             .collection("chats")
             .doc()
             .set({"userNo": userNoOnlyChat, "text": null});
-      } else {
-        setState(() {
-          userNoOnlyChat = "2";
-        });
-
-        await FirebaseFirestore.instance
-            .collection('onlyChatUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("onlyChatUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
-
-        var message = await FirebaseFirestore.instance
-            .collection("onlyChatMessages")
-            .doc(joinCode);
-        message.update({"userName2": displayName, "bothUserConnected": true});
-        message
-            .collection("chats")
-            .doc()
-            .set({"userNo": userNoOnlyChat, "text": null});
+        overlayEntry.remove();
       }
+      navigateToChatScreen(joinCode, userNoOnlyChat);
+
+      await FirebaseFirestore.instance
+          .collection("onlyChatCount")
+          .doc("39uC3A9gR4obTHkkljAU")
+          .update({"count": count});
     } else {
+      var databaseCount = await FirebaseFirestore.instance
+          .collection("onlyChatCount")
+          .doc("39uC3A9gR4obTHkkljAU")
+          .get()
+          .then((value) => value.get("count"));
+      int count = databaseCount + 1;
+      String joinCode = "null";
       await FirebaseFirestore.instance
           .collection('onlyChatUsers-online')
-          .where("gender", whereIn: searchForWhome)
           .where("searchForWhome", arrayContains: usersGender)
+          .where("gender", whereIn: searchForWhome)
+          .orderBy("count")
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) {
@@ -484,12 +588,53 @@ class _ThirdPageState extends State<ThirdPage> {
         });
       });
 
-      if (joinCode == "null") {
+      if (joinCode != "null" && joinCode != lastJoinCode) {
+        await FirebaseFirestore.instance
+            .collection('onlyChatUsers-online')
+            .doc(joinCode)
+            .update({
+          "request":
+              FieldValue.arrayUnion([widget.uid])
+        });
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          FirebaseFirestore.instance
+              .collection('onlyChatUsers-online')
+              .doc(joinCode)
+              .get()
+              .then((value) async {
+            List indexZero = value.get("request");
+            if (indexZero[0] == widget.uid) {
+              userNoOnlyChat = "2";
+
+              var message = await FirebaseFirestore.instance
+                  .collection("onlyChatMessages")
+                  .doc(joinCode);
+              message
+                  .update({"userName2": displayName, "bothUserConnected": true,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message
+                  .collection("chats")
+                  .doc()
+                  .set({"userNo": userNoOnlyChat, "text": null});
+
+              FirebaseFirestore.instance
+                  .collection('onlyChatUsers-online')
+                  .doc(joinCode)
+                  .delete();
+              overlayEntry.remove();
+            } else {
+              overlayEntry.remove();
+              return addUserOnlyChat(
+                  displayName, usersGender, searchForWhome, joinCode);
+            }
+          });
+        });
+      } else {
         var ref =
             FirebaseFirestore.instance.collection("onlyChatUsers-online").doc();
-        setState(() {
-          joinCode = ref.id;
-        });
+
+        joinCode = ref.id;
+
         ref.set({
           "count": "${count}",
           "name": displayName,
@@ -497,9 +642,9 @@ class _ThirdPageState extends State<ThirdPage> {
           "gender": usersGender,
           "searchForWhome": FieldValue.arrayUnion(searchForWhome),
         });
-        setState(() {
-          userNoOnlyChat = "1";
-        });
+
+        userNoOnlyChat = "1";
+
         var message = await FirebaseFirestore.instance
             .collection("onlyChatMessages")
             .doc(joinCode);
@@ -507,48 +652,22 @@ class _ThirdPageState extends State<ThirdPage> {
           "userName1": displayName,
           "userName2": " ",
           "bothUserConnected": false,
-          "someOneEndsCall": false
+          "someOneEndsCall": false,
+          "userEmail1":FirebaseAuth.instance.currentUser?.email,
+          "userEmail2":null
         });
         message
             .collection("chats")
             .doc()
             .set({"userNo": userNoOnlyChat, "text": null});
-      } else {
-        setState(() {
-          userNoOnlyChat = "2";
-        });
-
-        await FirebaseFirestore.instance
-            .collection('onlyChatUsers-online')
-            .orderBy("count")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            FirebaseFirestore.instance
-                .collection("onlyChatUsers-online")
-                .doc(doc.id)
-                .delete();
-          });
-        });
-
-        var message = await FirebaseFirestore.instance
-            .collection("onlyChatMessages")
-            .doc(joinCode);
-        message.set({"userName1": displayName, "bothUserConnected": true});
-        message
-            .collection("chats")
-            .doc()
-            .set({"userNo": userNoOnlyChat, "text": null});
+        overlayEntry.remove();
       }
+      navigateToChatScreen(joinCode, userNoOnlyChat);
+      await FirebaseFirestore.instance
+          .collection("onlyChatCount")
+          .doc("39uC3A9gR4obTHkkljAU")
+          .update({"count": count});
     }
-    overlayEntry.remove();
-
-    navigateToChatScreen(joinCode, userNoOnlyChat);
-
-    FirebaseFirestore.instance
-        .collection("onlyChatCount")
-        .doc("39uC3A9gR4obTHkkljAU")
-        .update({"count": count});
   }
 
   navigateToChatScreen(
@@ -578,8 +697,10 @@ class _ThirdPageState extends State<ThirdPage> {
               role: _role,
               msgDocId: joinCode,
               userNo: userNo,
+              dltDoc: joinCode,
             ),
     ));
+
     if (mode == "onlyCall") {
       updateCoinInfo(data, "audioCall", widget.searchForWhome);
     } else {
@@ -630,10 +751,10 @@ class _ThirdPageState extends State<ThirdPage> {
         overlays: SystemUiOverlay.values);
 
     if ((countForAds + 3) % 5 == 0) {
-      showAds?videoAds.loadRewardedAd1():null;
+      showAds ? videoAds.loadRewardedAd1() : null;
     }
     if (countForAds % 5 == 0) {
-      showAds?videoAds.showRewardedAd1():null;
+      showAds ? videoAds.showRewardedAd1() : null;
     }
     return Scaffold(
       backgroundColor: Colors.black,
@@ -737,22 +858,23 @@ class _ThirdPageState extends State<ThirdPage> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                            setState(() {
+                          setState(() {
                             countForAds++;
                           });
 
                           if (countForAds % 5 != 0) {
-                          if (widget.coins >= 5 ||
-                              widget.searchForWhome == "random") {
-                            addUserOnlyCall(
-                                widget.displayName,
-                                widget.userGender,
-                                ["${widget.searchForWhome}", "random"]);
-                          } else {
-                            showDialog(
-                                context: context,
-                                builder: (context) => CoinPurchasePage());
-                          }
+                            if (widget.coins >= 5 ||
+                                widget.searchForWhome == "random") {
+                              addUserOnlyCall(
+                                  widget.displayName,
+                                  widget.userGender,
+                                  ["${widget.searchForWhome}", "random"],
+                                  "null");
+                            } else {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) => CoinPurchasePage());
+                            }
                           }
                         },
                         child: Container(
@@ -787,10 +909,6 @@ class _ThirdPageState extends State<ThirdPage> {
                                 Icons.call_outlined,
                                 size: 30,
                               ),
-                              // Text(
-                              //   "Call",
-                              //   style: TextStyle(fontWeight: FontWeight.bold),
-                              // )
                             ],
                           ),
                         ),
@@ -804,20 +922,25 @@ class _ThirdPageState extends State<ThirdPage> {
                           setState(() {
                             countForAds++;
                           });
-
-                          if (countForAds % 5 != 0) {
-                            if (widget.coins >= 5 ||
-                                widget.searchForWhome == "random") {
-                              addUserVideoCall(
-                                  widget.displayName,
-                                  widget.userGender,
-                                  ["${widget.searchForWhome}", "random"]);
-                            } else {
-                              showDialog(
-                                  context: context,
-                                  builder: (context) => CoinPurchasePage());
-                            }
-                          }
+                          addUserVideoCall(
+                              widget.displayName,
+                              widget.userGender,
+                              ["${widget.searchForWhome}", "random"],
+                              "null");
+                          // if (countForAds % 5 != 0) {
+                          //   if (widget.coins >= 5 ||
+                          //       widget.searchForWhome == "random") {
+                          //     addUserVideoCall(
+                          //         widget.displayName,
+                          //         widget.userGender,
+                          //         ["${widget.searchForWhome}", "random"],
+                          //         "null");
+                          //   } else {
+                          //     showDialog(
+                          //         context: context,
+                          //         builder: (context) => CoinPurchasePage());
+                          //   }
+                          // }
                         },
                         child: Container(
                           height: screen.width * 0.24,
@@ -851,10 +974,6 @@ class _ThirdPageState extends State<ThirdPage> {
                                 Icons.video_call_outlined,
                                 size: 60,
                               ),
-                              // Text(
-                              //   "Video Call",
-                              //   style: TextStyle(fontWeight: FontWeight.bold),
-                              // )
                             ],
                           ),
                         ),
@@ -863,17 +982,19 @@ class _ThirdPageState extends State<ThirdPage> {
                         width: 10,
                       ),
                       GestureDetector(
-                        onTap: () { 
-                            setState(() {
+                        onTap: () {
+                          setState(() {
                             countForAds++;
                           });
 
                           if (countForAds % 5 != 0) {
-                          addUserOnlyChat(
-                            widget.displayName,
-                            widget.userGender,
-                            ["${widget.searchForWhome}", "random"]);
-                        }},
+                            addUserOnlyChat(
+                                widget.displayName,
+                                widget.userGender,
+                                ["${widget.searchForWhome}", "random"],
+                                "null");
+                          }
+                        },
                         child: Container(
                           height: screen.width * 0.18,
                           width: screen.width * 0.18,
@@ -920,10 +1041,6 @@ class _ThirdPageState extends State<ThirdPage> {
               ),
             ]),
           ),
-          // Positioned(
-          //     right: 40,
-          //     top: 260,
-          //     child: ),
           Positioned(
               top: 40,
               left: 20,
@@ -932,7 +1049,6 @@ class _ThirdPageState extends State<ThirdPage> {
                 icon: Icon(Icons.arrow_back),
                 color: Colors.white,
               )),
-
           Positioned(
             top: 100,
             child: showAds
@@ -951,7 +1067,6 @@ class _ThirdPageState extends State<ThirdPage> {
                   )
                 : SizedBox(),
           ),
-
           Positioned(
             bottom: 0,
             child: showAds

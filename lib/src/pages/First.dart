@@ -5,13 +5,16 @@ import 'package:agora_flutter_quickstart/src/utils/bannerAds.dart';
 import 'package:agora_flutter_quickstart/src/utils/customNavigation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vibration/vibration.dart';
+import 'package:uuid/uuid.dart';
 
 class FirstPage extends StatefulWidget {
   // This widget is the root of your application.
@@ -22,14 +25,18 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   TextEditingController textEditingController = TextEditingController();
   CommonMethods cm = new CommonMethods();
+  var uuid = Uuid();
   String gender = "male";
   bool showAds = true;
+  bool isChecked = false;
   late BannerAd banner;
+  var uid;
   @override
   void initState() {
     super.initState();
     cm.checkConnectivity(context);
     willShowAds();
+    uid = uuid.v4();
   }
 
   @override
@@ -71,9 +78,19 @@ class _FirstPageState extends State<FirstPage> {
     }
   }
 
+    launchUrl(String urlLink) async {
+    final url = urlLink;
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   navigateTosecondScreen() async {
-  await Navigator.of(context).push(CustomPageRouteAnimation(
-        child: SecondPage(textEditingController.text, gender)));
+    await Navigator.of(context).push(CustomPageRouteAnimation(
+        child: SecondPage(textEditingController.text, gender, uid)));
     willShowAds();
   }
 
@@ -143,7 +160,6 @@ class _FirstPageState extends State<FirstPage> {
                         return null;
                       },
                       decoration: InputDecoration(
-                        
                         floatingLabelBehavior: FloatingLabelBehavior.never,
                         fillColor: Colors.black12,
                         filled: true,
@@ -158,8 +174,6 @@ class _FirstPageState extends State<FirstPage> {
                           borderSide: BorderSide(color: Colors.white24),
                           borderRadius: BorderRadius.circular(30),
                         ),
-
-                        
                       ),
                       style: TextStyle(color: Colors.black),
                     ),
@@ -175,7 +189,7 @@ class _FirstPageState extends State<FirstPage> {
                     height: 10,
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Radio(
@@ -217,14 +231,64 @@ class _FirstPageState extends State<FirstPage> {
                         "Others",
                         style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
-                      SizedBox(
-                        width: 10,
-                      )
+                    
                     ],
                   ),
-                  SizedBox(
-                    height: 10,
+                 
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Checkbox(
+                        checkColor: Colors.white,
+                        value: isChecked,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            isChecked = value!;
+                          });
+                        },
+                      ),
+                      // Text("I accept the Terms and Conditions")
+                      RichText(
+            text: TextSpan(children: [
+              TextSpan(
+                text: 'I accepted the ',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 10
+                ),
+              ),
+              TextSpan(
+                  text: 'Privacy Policy',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10
                   ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      launchUrl("https://ultimaterocker1994.blogspot.com/p/privacy-policytalks.html");
+                    }),
+                     TextSpan(
+                text: ' and ',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 10
+                ),
+              ),
+                     TextSpan(
+                  text: 'Terns and Conditions',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      launchUrl("https://ultimaterocker1994.blogspot.com/p/terms-conditionstalks.html");
+                    }),
+            ]),
+          ),
+                    ],
+                  ),
+                
                   GestureDetector(
                     onTap: () {
                       // if (await Vibration.hasCustomVibrationsSupport()!=null) {
@@ -235,8 +299,9 @@ class _FirstPageState extends State<FirstPage> {
                       //   Vibration.vibrate();
                       // }
                       FocusScope.of(context).unfocus();
-                      if (textEditingController.text.length != 0) {
+                      if (textEditingController.text.length != 0 && isChecked) {
                         navigateTosecondScreen();
+                      
                       }
                       // showDialog(context: context, builder: (context)=>CoinPurchasePage());
                     },
@@ -299,21 +364,13 @@ class _FirstPageState extends State<FirstPage> {
           child: Container(
             height: 70,
             width: 70,
+
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50), color: Colors.white),
-            child: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    color: Colors.black12),
-                child: Icon(
-                  Icons.video_camera_front_outlined,
-                  color: Colors.black,
-                  size: 35,
-                ),
-              ),
-            ),
+                borderRadius: BorderRadius.circular(50),
+                color: Colors.white,
+                image: DecorationImage(
+                    image: AssetImage("appIcon.png"), fit: BoxFit.fill)),
+            // child: Image.asset("appIcon.png",fit: BoxFit.fill,height: 10),
           ),
         ),
         Positioned(

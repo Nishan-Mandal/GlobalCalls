@@ -11,6 +11,12 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final initFuture = MobileAds.instance.initialize();
   final adState = BannerAds(initFuture);
+    ErrorWidget.builder = (FlutterErrorDetails details) => Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+             ),
+        ),
+      );
   runApp(Provider.value(
     value: adState,
     builder: (context, child) => MyApp(),

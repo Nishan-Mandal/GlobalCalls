@@ -2,37 +2,31 @@ import 'dart:async';
 
 import 'package:agora_flutter_quickstart/src/pages/CoinsPurchase.dart';
 import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
-import 'package:agora_flutter_quickstart/src/pages/OnlyCall.dart';
-import 'package:agora_flutter_quickstart/src/pages/OnlyChat.dart';
-import 'package:agora_flutter_quickstart/src/pages/First.dart';
 import 'package:agora_flutter_quickstart/src/pages/Third.dart';
 import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:agora_flutter_quickstart/src/utils/bannerAds.dart';
 import 'package:agora_flutter_quickstart/src/utils/customNavigation.dart';
 import 'package:agora_flutter_quickstart/src/utils/videoAds.dart';
-import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'VideoCall.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SecondPage extends StatefulWidget {
   String displayName;
   String userGender;
-  SecondPage(this.displayName, this.userGender);
+  String uid;
+  SecondPage(this.displayName, this.userGender,this.uid);
   @override
   State<StatefulWidget> createState() => SecondPageState();
 }
 
 class SecondPageState extends State<SecondPage> {
-  CommonMethods cm=new CommonMethods();
+  CommonMethods cm = new CommonMethods();
   VideoAds videoAds = new VideoAds();
   RewardedAd? rewardedAd;
   bool showAds = true;
@@ -41,24 +35,23 @@ class SecondPageState extends State<SecondPage> {
   @override
   void initState() {
     super.initState();
-   willShowAds();
+    willShowAds();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    showAds?videoAds.loadRewardedAd1():null;
+    showAds ? videoAds.loadRewardedAd1() : null;
   }
 
   @override
   void dispose() {
-    showAds?videoAds.loadRewardedAd1():null;
+    showAds ? videoAds.loadRewardedAd1() : null;
 
     super.dispose();
   }
 
-
-    willShowAds() async {
+  willShowAds() async {
     if (FirebaseAuth.instance.currentUser != null) {
       await FirebaseFirestore.instance
           .collection("users")
@@ -74,12 +67,21 @@ class SecondPageState extends State<SecondPage> {
     }
   }
 
-
   navigateToNextScreen(String searchForWhome, int coins) {
-    showAds?videoAds.showRewardedAd1():null;
+    showAds ? videoAds.showRewardedAd1() : null;
     Navigator.of(context).push(CustomPageRouteAnimation(
         child: ThirdPage(
-            widget.displayName, widget.userGender, searchForWhome, coins)));
+            widget.displayName, widget.userGender, searchForWhome, coins,widget.uid)));
+  }
+
+  launchUrl(String urlLink) async {
+    final url = urlLink;
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   Future<UserCredential> signInWithGoogle() async {
@@ -118,7 +120,8 @@ class SecondPageState extends State<SecondPage> {
           "email": "${googleUser.email}",
           "photo": "${googleUser.photoUrl}",
           "coins": 0,
-          "removeAds":false
+          "removeAds": false,
+          "reports":0
         });
       }
     });
@@ -158,23 +161,7 @@ class SecondPageState extends State<SecondPage> {
               backgroundColor: Colors.black,
               key: _scaffoldKey,
               drawer: drawer("$userName", "$userEmail"),
-              onDrawerChanged: (isOpen) {
-                if (!isOpen ) {
-                  FirebaseFirestore.instance
-                      .collection("users")
-                      .doc(FirebaseAuth.instance.currentUser?.email)
-                      .get()
-                      .then((value) {
-                    setState(() {
-                      coins = value.get("coins");
-                    });
-                      
-                   
-                  });
-              willShowAds();
-                }
-                  
-              },
+          
               body: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -193,15 +180,26 @@ class SecondPageState extends State<SecondPage> {
                           SizedBox(
                             width: 35,
                             child: IconButton(
-                                onPressed: () {
+                                onPressed: () async {
+                                  // cm.addCoinsInDatabase(100);
                                   showDialog(
                                       context: context,
                                       builder: (context) => CoinPurchasePage());
+
+                                  // if (FirebaseAuth.instance.currentUser ==
+                                  //     null) {
+                                  //   await signInWithGoogle();
+                                  //   setState(() {});
+                                  // } else {
+                                  //   showDialog(
+                                  //       context: context,
+                                  //       builder: (context) =>
+                                  //           CoinPurchasePage());
+                                  // }
                                 },
                                 icon: Icon(
                                   Icons.add,
                                   color: Colors.greenAccent,
-                                      
                                   size: 27,
                                 )),
                           ),
@@ -221,7 +219,7 @@ class SecondPageState extends State<SecondPage> {
                         ],
                       )),
                   Container(
-                    height: screen.height * 0.55,
+                    height: screen.height * 0.6,
                     width: screen.width * 0.8,
                     decoration: BoxDecoration(
                         boxShadow: [
@@ -245,30 +243,7 @@ class SecondPageState extends State<SecondPage> {
                         SizedBox(
                           height: 20,
                         ),
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.center,
-                        //   crossAxisAlignment: CrossAxisAlignment.center,
-                        //   children: [
-                        //     Icon(
-                        //       Icons.video_call_outlined,
-                        //       size: 45,
-                        //     ),
-                        //     SizedBox(
-                        //       width: 15,
-                        //     ),
-                        //     Icon(
-                        //       Icons.call_outlined,
-                        //       size: 30,
-                        //     ),
-                        //     SizedBox(
-                        //       width: 15,
-                        //     ),
-                        //     Icon(
-                        //       Icons.message_outlined,
-                        //       size: 32,
-                        //     ),
-                        //   ],
-                        // ),
+                                    
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -373,6 +348,7 @@ class SecondPageState extends State<SecondPage> {
                         ),
                         GestureDetector(
                           onTap: () async {
+                           
                             if (FirebaseAuth.instance.currentUser != null &&
                                 coins > 0) {
                               navigateToNextScreen("male", coins);
@@ -381,14 +357,7 @@ class SecondPageState extends State<SecondPage> {
                               await signInWithGoogle();
                               setState(() {});
                             } else {
-                              // Fluttertoast.showToast(
-                              //     msg: "Insufficient coins",
-                              //     toastLength: Toast.LENGTH_SHORT,
-                              //     gravity: ToastGravity.CENTER,
-                              //     timeInSecForIosWeb: 1,
-                              //     backgroundColor: Colors.red,
-                              //     textColor: Colors.white,
-                              //     fontSize: 16.0);
+                      
                               showDialog(
                                   context: context,
                                   builder: (context) => CoinPurchasePage());
@@ -480,6 +449,7 @@ class SecondPageState extends State<SecondPage> {
                         ),
                         GestureDetector(
                           onTap: () async {
+                    
                             if (FirebaseAuth.instance.currentUser != null &&
                                 coins > 0) {
                               navigateToNextScreen("female", coins);
@@ -488,14 +458,6 @@ class SecondPageState extends State<SecondPage> {
                               await signInWithGoogle();
                               setState(() {});
                             } else {
-                              // Fluttertoast.showToast(
-                              //     msg: "Insufficient coins",
-                              //     toastLength: Toast.LENGTH_SHORT,
-                              //     gravity: ToastGravity.CENTER,
-                              //     timeInSecForIosWeb: 1,
-                              //     backgroundColor: Colors.red,
-                              //     textColor: Colors.white,
-                              //     fontSize: 16.0);
                               showDialog(
                                   context: context,
                                   builder: (context) => CoinPurchasePage());
@@ -582,19 +544,21 @@ class SecondPageState extends State<SecondPage> {
                           height: 20,
                         ),
                         InkWell(
-                          onTap: () {},
+                          onTap: () => launchUrl(
+                              "https://ultimaterocker1994.blogspot.com/p/learn-more-talks.html"),
                           child: Text(
                             "Learn more",
                             style: TextStyle(
                               color: Colors.blue,
                             ),
                           ),
-                        )
+                        ),
+                        
                       ],
                     ),
                   ),
                   Positioned(
-                    top: 110,
+                    top: 80,
                     child: showAds
                         ? Container(
                             alignment: Alignment.center,

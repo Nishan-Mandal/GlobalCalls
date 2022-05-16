@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:agora_flutter_quickstart/src/pages/Drawer.dart';
+import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +18,7 @@ class OnlyChatPage extends StatefulWidget {
 
 class _OnlyChatPageState extends State<OnlyChatPage> {
   TextEditingController textEditingController = TextEditingController();
+  CommonMethods cm=CommonMethods();
 
   sendText(
     String text,
@@ -188,6 +190,7 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
           builder: (context, snapshot) {
             var bothUserConnected;
             var OtherUserName;
+            var otherUserEmail;
 
             try {
               bothUserConnected = snapshot.data?["bothUserConnected"];
@@ -197,8 +200,10 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
               }
               if (widget.userNo == "1") {
                 OtherUserName = snapshot.data?["userName2"];
+                otherUserEmail=snapshot.data?["userEmail2"];
               } else {
                 OtherUserName = snapshot.data?["userName1"];
+                otherUserEmail=snapshot.data?["userEmail1"];
               }
             } catch (e) {
               print(e);
@@ -245,7 +250,35 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
                                   ? Colors.green
                                   : Colors.indigo[200],
                               size: 10,
-                            )
+                            ),
+                            bothUserConnected == true
+                                  ? PopupMenuButton(
+                                      icon: Icon(Icons.more_vert,
+                                          color:  Colors.white
+                                              ), // add this line
+                                      itemBuilder: (_) =>
+                                          <PopupMenuItem<String>>[
+                                            new PopupMenuItem<String>(
+                                                height: 20,
+                                                child: Container(
+                                                    width: 50,
+                                                    child: Text(
+                                                      "Report",
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                      ),
+                                                    )),
+                                                value: 'report'),
+                                          ],
+                                      onSelected: (index) async {
+                                        switch (index) {
+                                          case 'report':
+                                            cm.reportUser(otherUserEmail);
+
+                                            break;
+                                        }
+                                      })
+                                  : SizedBox()
                           ],
                         ),
                       ),

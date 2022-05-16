@@ -1,6 +1,8 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class VideoAds {
+    // String get rewardedAdUnitID1 => 'ca-app-pub-1317304154938617/3144497886';
+
   String get rewardedAdUnitID1 => 'ca-app-pub-3940256099942544/5224354917';
   RewardedAd? _rewardedAd;
   void loadRewardedAd1() {
@@ -9,7 +11,7 @@ class VideoAds {
         request: AdRequest(),
         rewardedAdLoadCallback:
             RewardedAdLoadCallback(onAdLoaded: (RewardedAd ad) {
-          print("Ad loaded====================");
+          // print("Ad loaded====================");
           _rewardedAd = ad;
         }, onAdFailedToLoad: (LoadAdError error) {
           print("Failed to load rewardedAd");
