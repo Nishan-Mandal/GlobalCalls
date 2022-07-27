@@ -7,7 +7,7 @@
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="com.android.vending.BILLING"/>
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
@@ -65,11 +65,10 @@
         </activity>
          <meta-data
                 android:name="com.google.android.gms.ads.APPLICATION_ID"
-                android:value="ca-app-pub-3940256099942544~3347511713"/>
+                android:value="ca-app-pub-1317304154938617~8167701180"/>
                 <!-- android:value="ca-app-pub-1317304154938617~8925251956"/> -->
-                
-                
-                
+         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>       
+                          
     </application>
 </manifest>
 

@@ -1,9 +1,8 @@
 import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
+import 'package:agora_flutter_quickstart/src/utils/purchaseApi.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
-
 
 class CoinPurchasePage extends StatefulWidget {
   CoinPurchasePage({Key? key}) : super(key: key);
@@ -13,21 +12,33 @@ class CoinPurchasePage extends StatefulWidget {
 }
 
 class _CoinPurchasePageState extends State<CoinPurchasePage> {
-
-  CommonMethods cm=CommonMethods();
-  late Razorpay razorpay;
-  String? email=FirebaseAuth.instance.currentUser!.email;
-
+  CommonMethods cm = CommonMethods();
+  String? email = FirebaseAuth.instance.currentUser!.email;
 
   @override
   void initState() {
     super.initState();
+  }
 
-    razorpay = Razorpay();
-
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlerPaymentSuccess);
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlerErrorFailure);
-    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handlerExternalWallet);
+  Future fetchOffers(List<String> packageId,int numberOfCoins) async {
+    final offerings = await PurchaseApi.fetchOffersByIds(packageId);
+    if (offerings.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("No Plans Found")));
+    } else {
+      final packages = offerings
+          .map((offer) => offer.availablePackages)
+          .expand((pair) => pair)
+          .toList();
+      final isSuccess = await PurchaseApi.purchasePackage(packages[0]);
+      if(isSuccess){
+        buyCoins(numberOfCoins);
+      }
+      else if(!isSuccess){
+              ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Transaction Failed")));
+      }
+    }
   }
 
   buyCoins(
@@ -50,54 +61,10 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
-    razorpay.clear();
   }
 
-  int noOfCoinsBuying=1;
-  void openCheckout(int amount,String email,int coins ){
-    setState(() {
-      noOfCoinsBuying=coins;
-    });
-    // rzp_live_XigAfbfQuxHIww 
-    var options = {
-      "key" : "rzp_test_q2a12YNiSI1fli",
-      "amount" : amount*100,
-      "name" : "Talks",
-      "description" : "Payment for purchasing coins",
-      "prefill" : {
-        "contact" : "",
-        "email" : email
-      },
-      "external" : {
-        "wallets" : ["paytm"]
-      }
-    };
-
-    try{
-      razorpay.open(options);
-
-    }catch(e){
-      print(e.toString());
-    }
-
-  }
-
-  void handlerPaymentSuccess(PaymentSuccessResponse response){
-    cm.addCoinsInDatabase(noOfCoinsBuying);
-    print('Success Response: $response');
-  }
-
-  void handlerErrorFailure(){
-    print("Pament error");
-   
-  }
-
-  void handlerExternalWallet(){
-    print("External Wallet");
-    
-  }
+  int noOfCoinsBuying = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +72,8 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
     return Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Stack(
+            clipBehavior: Clip.none,
             alignment: Alignment.topCenter,
-            overflow: Overflow.visible,
             children: [
               Positioned(
                   top: -40,
@@ -208,8 +175,14 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                             child: SizedBox(),
                           ),
                           GestureDetector(
-                            onTap: (){
-                              openCheckout(1, email!,100);
+                            onTap: () async {
+                              try {
+                                fetchOffers(['100_coins'],100);
+                              } catch (e) {
+                                print(e);
+                              }
+
+                           
                             },
                             child: Container(
                               alignment: Alignment.center,
@@ -230,7 +203,7 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                         ],
                       ),
                     ),
-                 
+
                     Container(
                       height: screen.height * 0.08,
                       width: screen.width * 0.7,
@@ -289,8 +262,12 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                             child: SizedBox(),
                           ),
                           GestureDetector(
-                            onTap: (){
-                              openCheckout(140, email!,300);
+                            onTap: () {
+                              try {
+                                fetchOffers(['300_coins'],300);
+                              } catch (e) {
+                                print(e);
+                              }
                             },
                             child: Container(
                               alignment: Alignment.center,
@@ -311,12 +288,7 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                         ],
                       ),
                     ),
-                    // Padding(
-                    //   padding: const EdgeInsets.only(left: 15, right: 15),
-                    //   child: Divider(
-                    //     thickness: 0,
-                    //   ),
-                    // ),
+    
                     Container(
                       height: screen.height * 0.08,
                       width: screen.width * 0.7,
@@ -375,8 +347,12 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                             child: SizedBox(),
                           ),
                           GestureDetector(
-                            onTap: (){
-                              openCheckout(380, email!,800);
+                            onTap: () {
+                              try {
+                                fetchOffers(['800_coins'],800);
+                              } catch (e) {
+                                print(e);
+                              }
                             },
                             child: Container(
                               alignment: Alignment.center,
@@ -397,12 +373,7 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                         ],
                       ),
                     ),
-                    // Padding(
-                    //       padding: const EdgeInsets.only(left: 15, right: 15),
-                    //       child: Divider(
-                    //         thickness: 0,
-                    //       ),
-                    //     ),
+           
                     Container(
                       height: screen.height * 0.08,
                       width: screen.width * 0.7,
@@ -459,8 +430,12 @@ class _CoinPurchasePageState extends State<CoinPurchasePage> {
                           ),
                           Expanded(child: SizedBox()),
                           GestureDetector(
-                            onTap: (){
-                              openCheckout(1200, email!,2500);
+                            onTap: () {
+                              try {
+                                fetchOffers(['2500_coins'],2500);
+                              } catch (e) {
+                                print(e);
+                              }
                             },
                             child: Container(
                               alignment: Alignment.center,

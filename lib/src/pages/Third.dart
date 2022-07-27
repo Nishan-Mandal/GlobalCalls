@@ -1,5 +1,4 @@
 import 'package:agora_flutter_quickstart/src/pages/CoinsPurchase.dart';
-import 'package:agora_flutter_quickstart/src/pages/First.dart';
 import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:agora_flutter_quickstart/src/utils/bannerAds.dart';
 import 'package:agora_flutter_quickstart/src/utils/customNavigation.dart';
@@ -7,7 +6,6 @@ import 'package:agora_flutter_quickstart/src/utils/videoAds.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +24,8 @@ class ThirdPage extends StatefulWidget {
   String searchForWhome;
   int coins;
   String uid;
-  ThirdPage(this.displayName, this.userGender, this.searchForWhome, this.coins,this.uid);
+  ThirdPage(this.displayName, this.userGender, this.searchForWhome, this.coins,
+      this.uid);
   @override
   _ThirdPageState createState() => _ThirdPageState();
 }
@@ -34,7 +33,6 @@ class ThirdPage extends StatefulWidget {
 class _ThirdPageState extends State<ThirdPage> {
   CommonMethods cm = new CommonMethods();
   bool showAds = true;
-
 
   /// create a channelController to retrieve text value
   final _channelController = TextEditingController();
@@ -124,8 +122,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('videoCallsUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -140,7 +137,10 @@ class _ThirdPageState extends State<ThirdPage> {
                   .collection("videoCallsMessages")
                   .doc(joinCode);
 
-              message.update({"userName2": displayName,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message.update({
+                "userName2": displayName,
+                "userEmail2": FirebaseAuth.instance.currentUser?.email
+              });
               message
                   .collection("chats")
                   .doc()
@@ -179,8 +179,8 @@ class _ThirdPageState extends State<ThirdPage> {
         messag.set({
           "userName1": displayName,
           "userName2": " ",
-          "userEmail1":FirebaseAuth.instance.currentUser?.email,
-          "userEmail2":null,
+          "userEmail1": FirebaseAuth.instance.currentUser?.email,
+          "userEmail2": null,
           "someOneEndsCall": false
         });
         messag.collection("chats").doc().set({"userNo": "1", "text": null});
@@ -218,8 +218,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('videoCallsUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -234,7 +233,10 @@ class _ThirdPageState extends State<ThirdPage> {
                   .collection("videoCallsMessages")
                   .doc(joinCode);
 
-              message.update({"userName2": displayName,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message.update({
+                "userName2": displayName,
+                "userEmail2": FirebaseAuth.instance.currentUser?.email
+              });
               message
                   .collection("chats")
                   .doc()
@@ -273,8 +275,8 @@ class _ThirdPageState extends State<ThirdPage> {
         messag.set({
           "userName1": displayName,
           "userName2": " ",
-          "userEmail1":FirebaseAuth.instance.currentUser?.email,
-          "userEmail2":null,
+          "userEmail1": FirebaseAuth.instance.currentUser?.email,
+          "userEmail2": null,
           "someOneEndsCall": false
         });
         messag.collection("chats").doc().set({"userNo": "1", "text": null});
@@ -329,8 +331,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('onlyCallsUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -341,7 +342,6 @@ class _ThirdPageState extends State<ThirdPage> {
               .then((value) async {
             List indexZero = value.get("request");
             if (indexZero[0] == widget.uid) {
-
               onJoin(joinCode, "2", "onlyCall");
               FirebaseFirestore.instance
                   .collection('onlyCallsUsers-online')
@@ -402,8 +402,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('onlyCallsUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -492,8 +491,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('onlyChatUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -509,8 +507,11 @@ class _ThirdPageState extends State<ThirdPage> {
               var message = await FirebaseFirestore.instance
                   .collection("onlyChatMessages")
                   .doc(joinCode);
-              message.update(
-                  {"userName2": displayName, "bothUserConnected": true,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message.update({
+                "userName2": displayName,
+                "bothUserConnected": true,
+                "userEmail2": FirebaseAuth.instance.currentUser?.email
+              });
               message
                   .collection("chats")
                   .doc()
@@ -540,7 +541,6 @@ class _ThirdPageState extends State<ThirdPage> {
           "joinCode": joinCode,
           "gender": usersGender,
           "searchForWhome": FieldValue.arrayUnion(searchForWhome),
-          
         });
 
         userNoOnlyChat = "1";
@@ -553,8 +553,8 @@ class _ThirdPageState extends State<ThirdPage> {
           "userName2": " ",
           "bothUserConnected": false,
           "someOneEndsCall": false,
-          "userEmail1":FirebaseAuth.instance.currentUser?.email,
-          "userEmail2":null
+          "userEmail1": FirebaseAuth.instance.currentUser?.email,
+          "userEmail2": null
         });
         message
             .collection("chats")
@@ -593,8 +593,7 @@ class _ThirdPageState extends State<ThirdPage> {
             .collection('onlyChatUsers-online')
             .doc(joinCode)
             .update({
-          "request":
-              FieldValue.arrayUnion([widget.uid])
+          "request": FieldValue.arrayUnion([widget.uid])
         });
 
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -610,8 +609,11 @@ class _ThirdPageState extends State<ThirdPage> {
               var message = await FirebaseFirestore.instance
                   .collection("onlyChatMessages")
                   .doc(joinCode);
-              message
-                  .update({"userName2": displayName, "bothUserConnected": true,"userEmail2":FirebaseAuth.instance.currentUser?.email});
+              message.update({
+                "userName2": displayName,
+                "bothUserConnected": true,
+                "userEmail2": FirebaseAuth.instance.currentUser?.email
+              });
               message
                   .collection("chats")
                   .doc()
@@ -653,8 +655,8 @@ class _ThirdPageState extends State<ThirdPage> {
           "userName2": " ",
           "bothUserConnected": false,
           "someOneEndsCall": false,
-          "userEmail1":FirebaseAuth.instance.currentUser?.email,
-          "userEmail2":null
+          "userEmail1": FirebaseAuth.instance.currentUser?.email,
+          "userEmail2": null
         });
         message
             .collection("chats")
@@ -877,40 +879,52 @@ class _ThirdPageState extends State<ThirdPage> {
                             }
                           }
                         },
-                        child: Container(
-                          height: screen.width * 0.18,
-                          width: screen.width * 0.18,
-                          decoration: BoxDecoration(
-                              boxShadow: [
-                                //background color of box
-                                BoxShadow(
-                                  color: Colors.black38,
-                                  blurRadius: 5.0, // soften the shadow
-                                  spreadRadius: 2.0, //extend the shadow
-                                  offset: Offset(
-                                    -3.0, // Move to right 10  horizontally
-                                    3.0, // Move to bottom 10 Vertically
-                                  ),
-                                )
-                              ],
-                              gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orange,
-                                    Colors.amber,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: screen.width * 0.18,
+                              width: screen.width * 0.18,
+                              decoration: BoxDecoration(
+                                  boxShadow: [
+                                    //background color of box
+                                    BoxShadow(
+                                      color: Colors.black38,
+                                      blurRadius: 5.0, // soften the shadow
+                                      spreadRadius: 2.0, //extend the shadow
+                                      offset: Offset(
+                                        -3.0, // Move to right 10  horizontally
+                                        3.0, // Move to bottom 10 Vertically
+                                      ),
+                                    )
                                   ],
-                                  begin: Alignment.bottomLeft,
-                                  end: Alignment.topRight),
-                              borderRadius: BorderRadius.circular(40)),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        Colors.orange,
+                                        Colors.amber,
+                                      ],
+                                      begin: Alignment.bottomLeft,
+                                      end: Alignment.topRight),
+                                  borderRadius: BorderRadius.circular(40)),
+                              child: Icon(
                                 Icons.call_outlined,
                                 size: 30,
                               ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                           widget.searchForWhome!="random"? Row(
+                              children: [
+                                SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: Image.asset('shineCoin.gif')),
+                                Text("4")
+                              ],
+                            ):SizedBox()
+                          ],
                         ),
                       ),
                       SizedBox(
@@ -927,55 +941,59 @@ class _ThirdPageState extends State<ThirdPage> {
                               widget.userGender,
                               ["${widget.searchForWhome}", "random"],
                               "null");
-                          // if (countForAds % 5 != 0) {
-                          //   if (widget.coins >= 5 ||
-                          //       widget.searchForWhome == "random") {
-                          //     addUserVideoCall(
-                          //         widget.displayName,
-                          //         widget.userGender,
-                          //         ["${widget.searchForWhome}", "random"],
-                          //         "null");
-                          //   } else {
-                          //     showDialog(
-                          //         context: context,
-                          //         builder: (context) => CoinPurchasePage());
-                          //   }
-                          // }
                         },
-                        child: Container(
-                          height: screen.width * 0.24,
-                          width: screen.width * 0.24,
-                          decoration: BoxDecoration(
-                              boxShadow: [
-                                //background color of box
-                                BoxShadow(
-                                  color: Colors.black38,
-                                  blurRadius: 5.0, // soften the shadow
-                                  spreadRadius: 2.0, //extend the shadow
-                                  offset: Offset(
-                                    -3.0, // Move to right 10  horizontally
-                                    3.0, // Move to bottom 10 Vertically
-                                  ),
-                                )
-                              ],
-                              gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orange,
-                                    Colors.amber,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: screen.width * 0.24,
+                              width: screen.width * 0.24,
+                              decoration: BoxDecoration(
+                                  boxShadow: [
+                                    //background color of box
+                                    BoxShadow(
+                                      color: Colors.black38,
+                                      blurRadius: 5.0, // soften the shadow
+                                      spreadRadius: 2.0, //extend the shadow
+                                      offset: Offset(
+                                        -3.0, // Move to right 10  horizontally
+                                        3.0, // Move to bottom 10 Vertically
+                                      ),
+                                    )
                                   ],
-                                  begin: Alignment.bottomLeft,
-                                  end: Alignment.topRight),
-                              borderRadius: BorderRadius.circular(50)),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.video_call_outlined,
-                                size: 60,
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        Colors.orange,
+                                        Colors.amber,
+                                      ],
+                                      begin: Alignment.bottomLeft,
+                                      end: Alignment.topRight),
+                                  borderRadius: BorderRadius.circular(50)),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.video_call_outlined,
+                                    size: 60,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            widget.searchForWhome!="random"?Row(
+                              children: [
+                                SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: Image.asset('shineCoin.gif')),
+                                Text("6")
+                              ],
+                            ):SizedBox()
+                          ],
                         ),
                       ),
                       SizedBox(
@@ -995,44 +1013,62 @@ class _ThirdPageState extends State<ThirdPage> {
                                 "null");
                           }
                         },
-                        child: Container(
-                          height: screen.width * 0.18,
-                          width: screen.width * 0.18,
-                          decoration: BoxDecoration(
-                              boxShadow: [
-                                //background color of box
-                                BoxShadow(
-                                  color: Colors.black38,
-                                  blurRadius: 5.0, // soften the shadow
-                                  spreadRadius: 2.0, //extend the shadow
-                                  offset: Offset(
-                                    -3.0, // Move to right 10  horizontally
-                                    3.0, // Move to bottom 10 Vertically
-                                  ),
-                                )
-                              ],
-                              gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orange,
-                                    Colors.amber,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: screen.width * 0.18,
+                              width: screen.width * 0.18,
+                              decoration: BoxDecoration(
+                                  boxShadow: [
+                                    //background color of box
+                                    BoxShadow(
+                                      color: Colors.black38,
+                                      blurRadius: 5.0, // soften the shadow
+                                      spreadRadius: 2.0, //extend the shadow
+                                      offset: Offset(
+                                        -3.0, // Move to right 10  horizontally
+                                        3.0, // Move to bottom 10 Vertically
+                                      ),
+                                    )
                                   ],
-                                  begin: Alignment.bottomLeft,
-                                  end: Alignment.topRight),
-                              borderRadius: BorderRadius.circular(40)),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_outlined,
-                                size: 30,
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        Colors.orange,
+                                        Colors.amber,
+                                      ],
+                                      begin: Alignment.bottomLeft,
+                                      end: Alignment.topRight),
+                                  borderRadius: BorderRadius.circular(40)),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.chat_outlined,
+                                    size: 30,
+                                  ),
+                                  // Text(
+                                  //   "Chat",
+                                  //   style: TextStyle(fontWeight: FontWeight.bold),
+                                  // )
+                                ],
                               ),
-                              // Text(
-                              //   "Chat",
-                              //   style: TextStyle(fontWeight: FontWeight.bold),
-                              // )
-                            ],
-                          ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            widget.searchForWhome!="random"?Row(
+                              children: [
+                                SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: Image.asset('shineCoin.gif')),
+                                Text("3")
+                              ],
+                            ):SizedBox()
+                          ],
                         ),
                       ),
                     ],
@@ -1094,7 +1130,6 @@ class _ThirdPageState extends State<ThirdPage> {
 class MyShape extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // TODO: implement paint
     final paint = Paint();
     final path = Path();
     paint.style = PaintingStyle.stroke;

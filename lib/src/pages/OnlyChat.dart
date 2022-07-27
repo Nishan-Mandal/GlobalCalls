@@ -175,7 +175,6 @@ class _OnlyChatPageState extends State<OnlyChatPage> {
   @override
   Widget build(BuildContext context) {
     var screen = MediaQuery.of(context).size;
-    var keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     var isKeyboard = MediaQuery.of(context).viewInsets.bottom != 0;
     double statusBarHeight = MediaQuery.of(context).padding.top;
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);

@@ -162,7 +162,7 @@ class _drawerState extends State<drawer> {
                     height: 20,
                   ),
                   Text(
-                    "Enjoying Sleep Relax Sounds?",
+                    "Enjoying Talks?",
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -210,7 +210,7 @@ class _drawerState extends State<drawer> {
                     onTap: () {
                       if (ratingStars > 2) {
                         StoreRedirect.redirect(
-                          androidAppId: "com.ultimaterocker.globalCalls",
+                          androidAppId: "com.ultimaterocker.talks",
                         );
                         Navigator.pop(context);
                       } else {
@@ -438,7 +438,7 @@ class _drawerState extends State<drawer> {
                 "Privacy Policy",
                 style: TextStyle(fontSize: 17),
               ),
-              onTap: ()=>launchUrl("https://ultimaterocker1994.blogspot.com/p/privacy-policytalks.html"),
+              onTap: ()=>launch("https://ultimaterocker1994.blogspot.com/p/privacy-policytalks.html"),
             ),
                ListTile(
               leading: Icon(Icons.privacy_tip),
@@ -446,7 +446,7 @@ class _drawerState extends State<drawer> {
                 "Terms & Conditions",
                 style: TextStyle(fontSize: 17),
               ),
-              onTap: ()=>launchUrl("https://ultimaterocker1994.blogspot.com/p/terms-conditionstalks.html"),
+              onTap: ()=>launch("https://ultimaterocker1994.blogspot.com/p/terms-conditionstalks.html"),
             ),
             StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance

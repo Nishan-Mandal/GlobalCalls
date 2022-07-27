@@ -8,7 +8,6 @@ import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
@@ -31,17 +30,17 @@ class OnlyCallPage extends StatefulWidget {
   @override
   _OnlyCallPageState createState() => _OnlyCallPageState();
 }
- AudioPlayer plr1 = AudioPlayer();
- AudioCache player1 = AudioCache(fixedPlayer: plr1);
- class _OnlyCallPageState extends State<OnlyCallPage> {
-   CommonMethods cm=CommonMethods();
+
+AudioPlayer plr1 = AudioPlayer();
+AudioCache player1 = AudioCache(fixedPlayer: plr1);
+
+class _OnlyCallPageState extends State<OnlyCallPage> {
+  CommonMethods cm = CommonMethods();
   final _users = <int>[];
   final _infoStrings = <String>[];
   bool muted = false;
   late RtcEngine _engine;
-  bool playNow=true;
-
-
+  bool playNow = true;
 
   @override
   void dispose() {
@@ -62,12 +61,12 @@ class OnlyCallPage extends StatefulWidget {
   }
 
   playJoinCallSoundEffect() async {
-    if(isSound){
-    await player1.play("joinCall.mp3");
+    if (isSound) {
+      await player1.play("joinCall.mp3");
     }
   }
 
-    int getRandomElement() {
+  int getRandomElement() {
     Random rnd;
     int min = 0;
     int max = 4;
@@ -75,6 +74,7 @@ class OnlyCallPage extends StatefulWidget {
     int r = min + rnd.nextInt(max - min);
     return r;
   }
+
   var randomBot;
   Duration duration2 = Duration(seconds: 60);
   Timer? timer2;
@@ -176,22 +176,21 @@ class OnlyCallPage extends StatefulWidget {
   }
 
   /// Video view wrapper
-  Widget _videoView(view) {
-    return Expanded(child: Container(child: view));
-  }
+  // Widget _videoView(view) {
+  //   return Expanded(child: Container(child: view));
+  // }
 
   /// Video view row wrapper
-  Widget _expandedVideoRow(List<Widget> views) {
-    final wrappedViews = views.map<Widget>(_videoView).toList();
-    return Expanded(
-      child: Row(
-        children: wrappedViews,
-      ),
-    );
-  }
+  // Widget _expandedVideoRow(List<Widget> views) {
+  //   final wrappedViews = views.map<Widget>(_videoView).toList();
+  //   return Expanded(
+  //     child: Row(
+  //       children: wrappedViews,
+  //     ),
+  //   );
+  // }
 
   bool timerStated = false;
- 
 
   /// Video layout wrapper
   Widget _viewRows() {
@@ -200,7 +199,6 @@ class OnlyCallPage extends StatefulWidget {
     if (views.length == 2 && !timerStated) {
       startTimer();
       timerStated = true;
-    
     }
     switch (views.length) {
       case 1:
@@ -262,9 +260,9 @@ class OnlyCallPage extends StatefulWidget {
               ],
             ));
       case 2:
-           if (playNow) {
+        if (playNow) {
           playJoinCallSoundEffect();
-        
+
           playNow = false;
         }
         return Column(
@@ -278,38 +276,42 @@ class OnlyCallPage extends StatefulWidget {
                   "Connected",
                   style: TextStyle(fontSize: 30, color: Colors.black),
                 ),
-                SizedBox(width: 10,),
-                Icon(Icons.brightness_1,color: Colors.green,size: 10,),
-                SizedBox(width: 10,),
-                   
-                                   PopupMenuButton(
-                                      icon: Icon(Icons.more_vert,
-                                          color:  Colors.white
-                                              ), // add this line
-                                      itemBuilder: (_) =>
-                                          <PopupMenuItem<String>>[
-                                            new PopupMenuItem<String>(
-                                                height: 20,
-                                                child: Container(
-                                                    width: 50,
-                                                    child: Text(
-                                                      "Report",
-                                                      style: TextStyle(
-                                                        color: Colors.black,
-                                                      ),
-                                                    )),
-                                                value: 'report'),
-                                          ],
-                                      onSelected: (index) async {
-                                        switch (index) {
-                                          case 'report':
-                                          // TO DO......//
-                                            // cm.reportUser(otherUserEmail);
+                SizedBox(
+                  width: 10,
+                ),
+                Icon(
+                  Icons.brightness_1,
+                  color: Colors.green,
+                  size: 10,
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                PopupMenuButton(
+                    icon: Icon(Icons.more_vert,
+                        color: Colors.black), // add this line
+                    itemBuilder: (_) => <PopupMenuItem<String>>[
+                          new PopupMenuItem<String>(
+                              height: 20,
+                              child: Container(
+                                  width: 50,
+                                  child: Text(
+                                    "Report",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                  )),
+                              value: 'report'),
+                        ],
+                    onSelected: (index) async {
+                      switch (index) {
+                        case 'report':
+                          // TO DO......//
+                          // cm.reportUser(otherUserEmail);
 
-                                            break;
-                                        }
-                                      })
-                                 
+                          break;
+                      }
+                    })
               ],
             ),
             buildTime(),
@@ -333,16 +335,16 @@ class OnlyCallPage extends StatefulWidget {
     timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
   }
 
-var seconds;
+  var seconds;
   void addTime() {
     final views = _getRenderViews();
     final addSeconds = countDown ? 1 : -1;
     setState(() {
-     seconds = duration.inSeconds + addSeconds;
-     
-      if (views.length == 1 || seconds==600) {
+      seconds = duration.inSeconds + addSeconds;
+
+      if (views.length == 1 || seconds == 600) {
         timer?.cancel();
-        _onCallEnd(context,seconds??0);
+        _onCallEnd(context, seconds ?? 0);
       }
       if (seconds < 0) {
         timer?.cancel();
@@ -353,7 +355,7 @@ var seconds;
   }
 
   _onCallEnd(BuildContext context, int seconds) async {
-    Navigator.pop(context,seconds);
+    Navigator.pop(context, seconds);
     FirebaseFirestore.instance
         .collection("onlyCallsUsers-online")
         .doc(widget.channelName)
@@ -377,10 +379,9 @@ var seconds;
           TextButton(
               child: Text("Yes"),
               onPressed: () {
-                _onCallEnd(context,seconds??0);
+                _onCallEnd(context, seconds ?? 0);
                 Navigator.pop(context);
                 Navigator.pop(context);
-                
               }),
           TextButton(
             child: Text("No"),
@@ -398,8 +399,7 @@ var seconds;
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: Colors.white,
         body: WillPopScope(
-            onWillPop: () =>backAlert(),
-            child: Center(child: _viewRows())),
+            onWillPop: () => backAlert(), child: Center(child: _viewRows())),
       );
 
   Widget buildTime() {
@@ -463,24 +463,22 @@ var seconds;
 
   Widget endCall() {
     return GestureDetector(
-      onTap: () => _onCallEnd(context,seconds??0),
+      onTap: () => _onCallEnd(context, seconds ?? 0),
       child: Container(
         height: 60,
         width: 60,
-        decoration: BoxDecoration(
-           boxShadow: [
-                                //background color of box
-                                BoxShadow(
-                                  color: Colors.black38,
-                                  blurRadius: 5.0, // soften the shadow
-                                  spreadRadius:0.0, //extend the shadow
-                                  offset: Offset(
-                                    -3.0, // Move to right 10  horizontally
-                                    3.0, // Move to bottom 10 Vertically
-                                  ),
-                                )
-                              ],
-          color: Colors.red, shape: BoxShape.circle),
+        decoration: BoxDecoration(boxShadow: [
+          //background color of box
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 5.0, // soften the shadow
+            spreadRadius: 0.0, //extend the shadow
+            offset: Offset(
+              -3.0, // Move to right 10  horizontally
+              3.0, // Move to bottom 10 Vertically
+            ),
+          )
+        ], color: Colors.red, shape: BoxShape.circle),
         child: Icon(
           Icons.call_end,
           color: Colors.white,

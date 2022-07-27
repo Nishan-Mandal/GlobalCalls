@@ -8,8 +8,6 @@ import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:avatar_glow/avatar_glow.dart';
 import 'package:vibration/vibration.dart';
 import '../utils/settings.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -378,56 +376,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return SizedBox();
   }
 
-  /// Toolbar layout
-  Widget _toolbar() {
-    if (widget.role == ClientRole.Audience) return Container();
-    return Container(
-      alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          RawMaterialButton(
-            onPressed: _onToggleMute,
-            child: Icon(
-              muted ? Icons.mic_off : Icons.mic,
-              color: muted ? Colors.white : Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: muted ? Colors.blueAccent : Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          ),
-          RawMaterialButton(
-            onPressed: () => _onCallEnd(context, seconds),
-            child: Icon(
-              Icons.call_end,
-              color: Colors.white,
-              size: 35.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.redAccent,
-            padding: const EdgeInsets.all(15.0),
-          ),
-          RawMaterialButton(
-            onPressed: _onSwitchCamera,
-            child: Icon(
-              Icons.switch_camera,
-              color: Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          )
-        ],
-      ),
-    );
-  }
-
   TextEditingController textEditingController = TextEditingController();
 
   sendText(
@@ -730,12 +678,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
     });
   }
 
-  void _onToggleMute() {
-    setState(() {
-      muted = !muted;
-    });
-    _engine.muteLocalAudioStream(muted);
-  }
+  // void _onToggleMute() {
+  //   setState(() {
+  //     muted = !muted;
+  //   });
+  //   _engine.muteLocalAudioStream(muted);
+  // }
 
   void _onSwitchCamera() {
     _engine.switchCamera();
@@ -819,8 +767,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                                         switch (index) {
                                           case 'Report':
                                             {
-                                              print(
-                                                  "object=========================================");
                                               cm.reportUser(otherUserEmail);
                                               break;
                                             }

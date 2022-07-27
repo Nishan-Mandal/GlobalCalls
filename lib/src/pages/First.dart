@@ -1,19 +1,18 @@
-import 'package:agora_flutter_quickstart/src/pages/CoinsPurchase.dart';
+import 'package:agora_flutter_quickstart/main.dart';
 import 'package:agora_flutter_quickstart/src/pages/Second.dart';
 import 'package:agora_flutter_quickstart/src/utils/CommonMethods.dart';
 import 'package:agora_flutter_quickstart/src/utils/bannerAds.dart';
 import 'package:agora_flutter_quickstart/src/utils/customNavigation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vibration/vibration.dart';
 import 'package:uuid/uuid.dart';
 
 class FirstPage extends StatefulWidget {
@@ -29,14 +28,48 @@ class _FirstPageState extends State<FirstPage> {
   String gender = "male";
   bool showAds = true;
   bool isChecked = false;
+  bool isNameGiven = true;
   late BannerAd banner;
+  Color checkBoxColor = Colors.black54;
+  bool isUnderline = false;
+
   var uid;
   @override
   void initState() {
     super.initState();
+    fetchImageFromDatabase();
     cm.checkConnectivity(context);
     willShowAds();
     uid = uuid.v4();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null) {
+        flutterLocalNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              android: AndroidNotificationDetails(
+                channel.id,
+                channel.name,
+                channel.description,
+                color: Colors.blue,
+                playSound: true,
+                icon: '@mipmap/ic_launcher',
+              ),
+            ));
+      }
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null) {
+        // todo----
+      }
+    });
   }
 
   @override
@@ -62,6 +95,50 @@ class _FirstPageState extends State<FirstPage> {
     super.dispose();
   }
 
+bool fetchedAllData=false;
+  fetchImageFromDatabase() async {
+    
+    await FirebaseFirestore.instance
+        .collection("events")
+        .orderBy("time")
+        .get()
+        .then((value) => {
+              value.docs.forEach((doc) async {
+                temp.add(doc.id);
+              })
+            });
+
+    for (var i = 0; i < temp.length; i++) {
+      await FirebaseFirestore.instance
+          .collection("events")
+          .doc(temp[i])
+          .get()
+          .then((value) async => {
+                imgList.add(await value.get("imageUrl")),
+                timeList.add(await value.get("time")),
+              });
+    }
+    setState(() {
+      fetchedAllData=true;
+    });
+  }
+
+    showOverlay(BuildContext context) async {
+    OverlayState? overlayState = Overlay.of(context);
+    OverlayEntry overlayEntry = OverlayEntry(
+        builder: (context) => Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                child: CircularProgressIndicator()
+              ),
+            ));
+
+    overlayState?.insert(overlayEntry);
+    await Future.delayed(Duration(seconds: 2));
+    overlayEntry.remove();
+    navigateTosecondScreen();
+  }
+
   willShowAds() async {
     if (FirebaseAuth.instance.currentUser != null) {
       await FirebaseFirestore.instance
@@ -78,7 +155,7 @@ class _FirstPageState extends State<FirstPage> {
     }
   }
 
-    launchUrl(String urlLink) async {
+  launchUrl(String urlLink) async {
     final url = urlLink;
 
     if (await canLaunch(url)) {
@@ -153,7 +230,7 @@ class _FirstPageState extends State<FirstPage> {
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(15),
                       ],
-                      validator: (String? value) {
+                      validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter display name';
                         }
@@ -167,11 +244,13 @@ class _FirstPageState extends State<FirstPage> {
                         contentPadding: const EdgeInsets.only(
                             left: 8.0, bottom: 8.0, top: 8.0),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white24),
+                          borderSide: BorderSide(
+                              color: isNameGiven ? Colors.white24 : Colors.red),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white24),
+                          borderSide: BorderSide(
+                              color: isNameGiven ? Colors.white24 : Colors.red),
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
@@ -231,79 +310,103 @@ class _FirstPageState extends State<FirstPage> {
                         "Others",
                         style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
-                    
                     ],
                   ),
-                 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Checkbox(
-                        checkColor: Colors.white,
-                        value: isChecked,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            isChecked = value!;
-                          });
-                        },
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          unselectedWidgetColor: checkBoxColor,
+                        ),
+                        child: Checkbox(
+                          checkColor: Color.fromARGB(255, 241, 203, 203),
+                          value: isChecked,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isChecked = value!;
+                              isUnderline = value ? false : true;
+                              checkBoxColor =
+                                  value ? Colors.black54 : Colors.red;
+                            });
+                          },
+                        ),
                       ),
+
                       // Text("I accept the Terms and Conditions")
-                      RichText(
-            text: TextSpan(children: [
-              TextSpan(
-                text: 'I accepted the ',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 10
-                ),
-              ),
-              TextSpan(
-                  text: 'Privacy Policy',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 10
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () {
-                      launchUrl("https://ultimaterocker1994.blogspot.com/p/privacy-policytalks.html");
-                    }),
-                     TextSpan(
-                text: ' and ',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 10
-                ),
-              ),
-                     TextSpan(
-                  text: 'Terns and Conditions',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 10
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () {
-                      launchUrl("https://ultimaterocker1994.blogspot.com/p/terms-conditionstalks.html");
-                    }),
-            ]),
-          ),
+                      Container(
+                        padding: EdgeInsets.only(
+                          bottom: 0, // Space between underline and text
+                        ),
+                        decoration: BoxDecoration(
+                            border: isUnderline
+                                ? Border(
+                                    bottom: BorderSide(
+                                    color: Colors.red,
+                                    width: 1.0, // Underline thickness
+                                  ))
+                                : null),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'I accepted the ',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              TextSpan(
+                                  text: 'Privacy Policy',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontSize: 10,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      launchUrl(
+                                          "https://ultimaterocker1994.blogspot.com/p/privacy-policytalks.html");
+                                    }),
+                              TextSpan(
+                                text: ' and ',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              TextSpan(
+                                  text: 'Terns and Conditions',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontSize: 10,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      launchUrl(
+                                          "https://ultimaterocker1994.blogspot.com/p/terms-conditionstalks.html");
+                                    }),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                
                   GestureDetector(
                     onTap: () {
-                      // if (await Vibration.hasCustomVibrationsSupport()!=null) {
-                      //   Vibration.vibrate(duration: 1000);
-                      // } else {
-                      //   Vibration.vibrate();
-                      //   await Future.delayed(Duration(milliseconds: 500));
-                      //   Vibration.vibrate();
-                      // }
                       FocusScope.of(context).unfocus();
-                      if (textEditingController.text.length != 0 && isChecked) {
-                        navigateTosecondScreen();
-                      
+
+                      if (!isChecked) {
+                        checkBoxColor = Colors.red;
+                        isUnderline = true;
                       }
-                      // showDialog(context: context, builder: (context)=>CoinPurchasePage());
+                      if (textEditingController.text.length == 0) {
+                        isNameGiven = false;
+                      } else {
+                        isNameGiven = true;
+                      }
+                      if (textEditingController.text.length != 0 && isChecked) {
+                        fetchedAllData?navigateTosecondScreen():showOverlay(context);
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.only(
@@ -364,13 +467,11 @@ class _FirstPageState extends State<FirstPage> {
           child: Container(
             height: 70,
             width: 70,
-
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
                 color: Colors.white,
                 image: DecorationImage(
                     image: AssetImage("appIcon.png"), fit: BoxFit.fill)),
-            // child: Image.asset("appIcon.png",fit: BoxFit.fill,height: 10),
           ),
         ),
         Positioned(
@@ -398,7 +499,6 @@ class _FirstPageState extends State<FirstPage> {
 class MyShape extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // TODO: implement paint
     final paint = Paint();
     final path = Path();
     paint.style = PaintingStyle.stroke;
@@ -411,24 +511,7 @@ class MyShape extends CustomPainter {
       size.width * 1,
       size.height * 0.5,
     );
-    // path.quadraticBezierTo(
-    //   size.width * 0.45,
-    //   size.height * 0.95,
-    //   size.width * 0.6,
-    //   size.height * 0.85,
-    // );
-    // path.quadraticBezierTo(
-    //   size.width * 0.75,
-    //   size.height * 0.75,
-    //   size.width * 0.85,
-    //   size.height * 0.7,
-    // );
-    // path.quadraticBezierTo(
-    //   size.width * 0.95,
-    //   size.height * 0.95,
-    //   size.width * 1,
-    //   size.height * 0.68,
-    // );
+
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.lineTo(0, size.height * 0.8);
@@ -441,7 +524,6 @@ class MyShape extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    // TODO: implement shouldRepaint
     return true;
   }
 }

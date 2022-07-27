@@ -1,42 +1,57 @@
 {
   "project_info": {
-    "project_number": "345339685076",
-    "firebase_url": "https://globalcalls-b0a61-default-rtdb.firebaseio.com",
-    "project_id": "globalcalls-b0a61",
-    "storage_bucket": "globalcalls-b0a61.appspot.com"
+    "project_number": "886819070967",
+    "project_id": "talks-612f0",
+    "storage_bucket": "talks-612f0.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:345339685076:android:7dc8c63cba76e0d0a3b341",
+        "mobilesdk_app_id": "1:886819070967:android:f448ac443e215fdcd444f2",
         "android_client_info": {
-          "package_name": "com.ultimaterocker.globalCalls"
+          "package_name": "com.ultimaterocker.talks"
         }
       },
       "oauth_client": [
         {
-          "client_id": "345339685076-mupv1r4k4rrishrn7dk7diqn5etk7mkh.apps.googleusercontent.com",
+          "client_id": "886819070967-ov5lm00onn16cguhd980jh2p2gr5old0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.ultimaterocker.globalCalls",
+            "package_name": "com.ultimaterocker.talks",
+            "certificate_hash": "056cfccd66f1952ef6f3dbf5fee7d89f7277a193"
+          }
+        },
+        {
+          "client_id": "886819070967-rk30bonmisprkun81uqds4vst4csnrtm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ultimaterocker.talks",
+            "certificate_hash": "51c022a37b62a19fd52597022a9157d1a637e4eb"
+          }
+        },
+        {
+          "client_id": "886819070967-rongb4jfqikenn2ro87sp6l29jk97bc4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ultimaterocker.talks",
             "certificate_hash": "8df892940f06cb6dcc4130152f6020838c39ce40"
           }
         },
         {
-          "client_id": "345339685076-itmb7lq4oh96imlgaab87kdfrvstondt.apps.googleusercontent.com",
+          "client_id": "886819070967-9d3fttt0dbsm21mbibk96tt3trlrd2bo.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCtAYo-rcvkO_kRei_Kv_fdvkNL4Cq2bYw"
+          "current_key": "AIzaSyCzZhUmT7FLMob_lJ2O-vhn6HtoV8SxIXc"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "345339685076-itmb7lq4oh96imlgaab87kdfrvstondt.apps.googleusercontent.com",
+              "client_id": "886819070967-9d3fttt0dbsm21mbibk96tt3trlrd2bo.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
